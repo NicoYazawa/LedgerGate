@@ -83,6 +83,8 @@ LG_LOG_LEVEL=info
 LG_SERVICE_TOKENS={"gateway":"dev-gateway-token","control":"dev-control-token","ledger":"dev-ledger-token","billing":"dev-billing-token","payment":"dev-payment-token","reconcile":"dev-reconcile-token"}
 ```
 
+Feature flags are environment-only: `LG_FEATURE_<UPPER_SNAKE>=true|false`, default off. They are not part of the YAML shape and are evaluated server-side.
+
 ## Validation rules
 
 - `service` must be one of `gateway`, `control`, `ledger`, `billing`, `payment`, `reconcile`.

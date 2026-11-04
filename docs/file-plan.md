@@ -5,6 +5,8 @@ Last updated: 2026-11-04.
 
 This document answers "which files are we likely to touch each week". The authoritative sequence of work is still the spec plus `to-tickets`; this is a capacity and layout forecast. File names may move as the design firms up.
 
+Delivery follows `docs/pr-workflow.md`. The weekly table is capacity planning, not a PR boundary: W1 is split into small vertical-slice PRs under the risk budget, not merged as one weekly batch. Each PR must pass CI, independent review, and the rollback checks before it lands.
+
 ## Repository layout
 
 ```text
@@ -45,6 +47,8 @@ LedgerGate/
 │   │   ├── ids/
 │   │   ├── money/
 │   │   ├── clock/
+│   │   ├── outbox/
+│   │   ├── flags/
 │   │   └── httpx/
 │   ├── gateway/
 │   │   ├── ingress/
@@ -144,6 +148,8 @@ LedgerGate/
 
 W1 is detailed because it starts immediately. W2–W10 are coarse forecasts; they will be re-cut after `to-tickets` and again at the W5 gate.
 
+W1 is delivered as several small PRs, not one weekly batch. The day-by-day table is a capacity forecast; use the risk tiers in `docs/pr-workflow.md` to decide where each PR boundary lands.
+
 ### W1 — foundations (detailed)
 
 **Outcome:** six services boot in compose, connect to their infrastructure, expose health/readiness, and the platform packages, OpenAPI contracts and initial migrations are in place.
@@ -163,7 +169,7 @@ W1 is detailed because it starts immediately. W2–W10 are coarse forecasts; the
 
 | Day | Work | Files |
 |---|---|---|
-| 1 | Module, build, config, IDs, money, clock, logging | `go.mod`, `go.sum`, `Makefile`, `.env.example`, `.gitignore`, `.golangci.yml`, `tools.go`, `internal/platform/{config,log,ids,money,clock,httpx}/*.go` + tests |
+| 1 | Module, build, config, IDs, money, clock, logging, flags | `go.mod`, `go.sum`, `Makefile`, `.env.example`, `.gitignore`, `.golangci.yml`, `tools.go`, `internal/platform/{config,log,ids,money,clock,httpx,flags}/*.go` + tests |
 | 2 | Service bootstrap, six entrypoints, health/readiness, service auth, crypto | `internal/platform/service/{service.go,health.go,routes.go}`, `internal/platform/{db,nats,redis,auth,crypt}/*.go`, `cmd/{gateway,control,ledger,billing,payment,reconcile}/main.go` |
 | 3 | OpenAPI specs, codegen config, initial migrations, migrate command | `api/openapi/*.yaml`, `api/oapi-codegen.yaml`, `api/generated/**`, `migrations/*/0001_init.sql`, `internal/platform/db/migrate.go`, `cmd/*/main.go` migrate subcommand |
 | 4 | Compose, Dockerfile, observability stack, CI | `docker-compose.yml`, `deploy/Dockerfile`, `deploy/compose/{prometheus.yml,jaeger.yml}`, `deploy/compose/grafana/provisioning/**`, `.github/workflows/ci.yml`, `scripts/smoke.ps1`, `scripts/smoke.sh` |
@@ -192,6 +198,8 @@ W1 is detailed because it starts immediately. W2–W10 are coarse forecasts; the
 | Clock | `internal/platform/clock/{clock.go,clock_test.go}` | `Clock` interface; system and fake clocks |
 | HTTP helpers | `internal/platform/httpx/{respond.go,middleware.go,health.go,respond_test.go}` | JSON errors (OpenAI shape for gateway, problem shape for admin/internal), request ID, recovery, logging |
 | Outbox skeleton | `internal/platform/outbox/outbox.go` | Shared outbox row/interface; implementation lands with gateway in W4 |
+| Feature flags | `internal/platform/flags/{flags.go,flags_test.go}` | Env-backed default-off flags; both states tested; no billing semantics |
+| Process | `docs/pr-workflow.md`, `docs/prompts/pr-reviewer.md`, `docs/prompts/pr-fixer.md`, `.github/pull_request_template.md`, `scripts/pr-size.ps1` | Risk-tier PR gate, independent review and fixer prompts, size check |
 | Contracts | `api/openapi/{control,ledger,billing,payment,reconcile}.yaml`, `api/oapi-codegen.yaml`, `api/generated/**` | OpenAPI-first contracts; generated server/client stubs |
 | Schemas | `migrations/{gateway,control,ledger,billing,payment,reconcile}/0001_init.sql` | Initial tables per database, including `outbox` and `processed_events` where needed |
 | Smoke scripts | `scripts/smoke.ps1`, `scripts/smoke.sh` | Curl every `/healthz` and `/readyz`; fail on non-200 |

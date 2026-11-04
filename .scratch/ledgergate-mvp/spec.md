@@ -265,6 +265,13 @@ Discrepancies create reconciliation items. Adjustments require an administrator 
 - No day-one Kubernetes; the final acceptance uses kind.
 - No multi-region, no 99.99 SLA, and no production payment processing.
 
+### Delivery workflow
+
+- All changes land through small, risk-sized pull requests under `docs/pr-workflow.md`.
+- Each PR must be buildable, tested, independently reviewed, rollback-ready, and within the risk budget.
+- Incomplete user-visible behavior is behind a default-off feature flag. Billing and pricing changes use price-catalog versions, not flags.
+- W1 scope and interfaces are in `docs/w1-foundation.md`.
+
 ## Testing Decisions
 
 ### Seams
@@ -349,7 +356,9 @@ This is a greenfield repository. The test harness establishes the prior art: tes
 
 ### Delivery
 
-The project is planned for ten weeks by one developer. The critical path is ledger core, then the gateway reserve/settle path, then reconciliation.
+The project is planned for ten weeks by one developer. Delivery follows `docs/pr-workflow.md`: vertical-slice PRs, independent review, feature flags, and rollback checks. The milestones below are cumulative forecasts, not single PRs.
+
+The critical path is ledger core, then the gateway reserve/settle path, then reconciliation.
 
 Milestones:
 

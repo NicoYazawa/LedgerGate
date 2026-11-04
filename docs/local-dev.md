@@ -74,7 +74,7 @@ Rules:
 ## Tests versus Compose
 
 - `make test` and `make test-integration` must not start Compose.
-- Integration tests use `testcontainers-go`, which allocates random host ports and cleans up after itself. Two worktrees can run tests in parallel.
+- Integration tests use `testcontainers-go`, which allocates random host ports and cleans up after itself. Two checkouts or worktrees can run tests in parallel.
 - Compose is for acceptance and demos only.
 
 ## Smoke scripts
