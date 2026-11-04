@@ -30,7 +30,7 @@ function Get-Tier {
     if ($Path -match '^web/') {
         return [pscustomobject]@{ Name = "ui"; Soft = 800; Hard = 1200 }
     }
-    if ($Path -match '^(docs/|scripts/|\.github/|README\.md$|\.scratch/|\.gitignore$)') {
+    if ($Path -match '^(docs/|scripts/|\.github/|README\.md$|AGENTS\.md$|\.scratch/|\.gitignore$)') {
         return [pscustomobject]@{ Name = "docs/tooling"; Soft = 800; Hard = 1200 }
     }
     return [pscustomobject]@{ Name = "default"; Soft = 500; Hard = 750 }

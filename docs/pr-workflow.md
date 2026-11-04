@@ -49,7 +49,7 @@ Count **hand-written production churn** (added + deleted lines). Exclude tests, 
 | Money / auth / data | `internal/ledger/`, `internal/billing/`, `internal/payment/`, `internal/platform/auth/`, `internal/platform/crypt/`, ledger/payment/control migrations, ledger/payment OpenAPI | 300 | 450 |
 | Core | `internal/gateway/`, `internal/provider/`, `internal/control/`, `internal/reconcile/`, other `internal/platform/`, other migrations, API contracts, root build/config (`go.mod`, `Makefile`, `docker-compose.yml`, `deploy/`, `.env.example`) | 400 | 600 |
 | UI | `web/` | 800 | 1200 |
-| Docs / tooling | `docs/`, `scripts/`, `.github/`, `.scratch/`, `README.md`, `.gitignore` | 800 | 1200 |
+| Docs / tooling | `docs/`, `scripts/`, `.github/`, `.scratch/`, `README.md`, `AGENTS.md`, `.gitignore` | 800 | 1200 |
 | Default | everything else | 500 | 750 |
 
 Rules:
