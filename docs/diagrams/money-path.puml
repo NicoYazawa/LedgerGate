@@ -1,0 +1,43 @@
+@startuml LedgerGate-MoneyPath
+title LedgerGate — Money path (reserve, stream, settle)
+
+autonumber
+skinparam shadowing false
+
+actor "Client" as C
+participant "gateway" as GW
+participant "ledger" as L
+participant "billing" as B
+participant "upstream provider" as P
+participant "gateway outbox" as O
+participant "NATS JetStream" as N
+
+C -> GW : POST /v1/chat/completions\n(stream, Idempotency-Key)
+GW -> GW : authenticate via Redis key cache
+GW -> L : Reserve(request_id, estimate, idempotency_key)
+
+alt insufficient balance
+  L --> GW : 402
+  GW --> C : 402
+else reserved
+  L --> GW : reservation_id
+  GW -> P : provider request (stream)
+  P --> GW : SSE chunks
+  GW --> C : SSE chunks (flush per event)
+  note right of GW : extract usage\non client disconnect keep reading briefly
+
+  alt upstream fails before first token
+    GW -> L : Release(reservation_id)
+    L --> GW : released
+    GW --> C : provider error, zero charge
+  else success or partial stream
+    GW -> O : write settlement intent (usage + attempts)
+    O -> N : publish usage.recorded (durable)
+    N -> L : consume usage.recorded
+    note over L, B : ledger rates with the latest price snapshot from billing
+    L -> L : rate, write double-entry postings,\nrelease hold (idempotent)
+  end
+end
+
+note over GW, P : failover only before first token;\nall attempts recorded; user charged once
+@enduml

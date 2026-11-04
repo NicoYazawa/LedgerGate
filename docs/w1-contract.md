@@ -1,0 +1,351 @@
+# W1 Independent Implementation Contract
+
+Status: working contract for two parallel, independent W1 implementations.
+Last updated: 2026-11-04.
+
+## 0. Shape of this run
+
+Two worktrees, the **same W1 scope**, the same base commit, no communication between the implementers. The goal is comparison, not division of labor: two independent solutions to the same problem, judged against the same gate, then one is merged.
+
+Do **not** `git merge` both branches into `main`. They touch the same files. A literal merge produces conflicts and a hybrid that neither agent designed. Pick one branch, or create an integration branch from the winner and selectively port specific files or commits from the loser.
+
+## 1. Base and worktrees
+
+The docs and spec are currently untracked. Commit a base first:
+
+```powershell
+git add AGENTS.md docs .scratch
+git commit -m "chore: add agent setup, architecture, spec and delivery docs"
+```
+
+Create two neutral worktrees from `main`:
+
+```powershell
+git worktree add ..\LedgerGate-w1-alpha -b w1-alpha
+git worktree add ..\LedgerGate-w1-beta  -b w1-beta
+```
+
+Both branches must start from the same commit. Do not let one agent see the other worktree or branch. Do not pass one agent's output to the other.
+
+If you create the worktrees with Orca instead of the git CLI, the invariant is the same: two worktrees, two branches, **the same base commit**, one agent per worktree. Verify with `git rev-parse HEAD` in each worktree. If Orca's worktree creation carries uncommitted changes, commit the baseline first so both worktrees start clean and identical. Orca's UI is only the tool; it must not change the comparison rules.
+
+## 2. Shared interface contract
+
+This section exists only so the two implementations are comparable. Both agents must use these names. Internal package structure, design choices and extras are free.
+
+### Services and ports
+
+| Service | HTTP port | Database |
+|---|---|---|
+| `gateway` | 8080 | `ledgergate_gateway` |
+| `control` | 8081 | `ledgergate_control` |
+| `ledger` | 8082 | `ledgergate_ledger` |
+| `billing` | 8083 | `ledgergate_billing` |
+| `payment` | 8084 | `ledgergate_payment` |
+| `reconcile` | 8085 | `ledgergate_reconcile` |
+
+Infrastructure: Postgres `5432`, Redis `6379`, NATS `4222` (monitoring `8222`), Jaeger UI `16686` (OTLP gRPC `4317`, HTTP `4318`), Prometheus `9090`, Grafana `3000`.
+
+### Environment variables
+
+| Variable | Meaning |
+|---|---|
+| `LG_ENV` | `dev`, `test`, or `prod` |
+| `LG_SERVICE` | Service name; equals the binary name |
+| `LG_HTTP_ADDR` | Listen address, e.g. `:8080` |
+| `LG_DATABASE_URL` | Per-service Postgres DSN |
+| `LG_REDIS_URL` | Redis DSN; gateway uses it |
+| `LG_NATS_URL` | NATS URL |
+| `LG_OTLP_ENDPOINT` | OTLP gRPC endpoint, e.g. `otel-collector:4317` |
+| `LG_LOG_LEVEL` | `debug`, `info`, `warn`, `error` |
+| `LG_SERVICE_TOKENS` | JSON map of caller service to bearer token |
+| `LG_HTTP_SHUTDOWN_TIMEOUT` | Graceful shutdown timeout; default `10s` |
+| `LG_CONFIG_FILE` | Optional YAML config path |
+
+### Health and metrics
+
+Every service exposes:
+
+- `GET /healthz` — process alive; 200.
+- `GET /readyz` — dependencies reachable; 200 or 503. Postgres for all; Redis for gateway; NATS for all six in W1.
+- `GET /metrics` — Prometheus metrics.
+
+### Makefile targets
+
+| Target | Behavior |
+|---|---|
+| `make generate` | Generate OpenAPI code; idempotent |
+| `make fmt` | Format Go code |
+| `make lint` | `golangci-lint` |
+| `make test` | Unit tests |
+| `make test-integration` | Testcontainers integration tests |
+| `make build` | Build six binaries into `bin/` |
+| `make up` | `docker compose up -d --build` |
+| `make down` | `docker compose down -v` |
+| `make logs` | Follow compose logs |
+| `make migrate` | Run the migrate subcommand for each service |
+| `make smoke` | Run `scripts/smoke.ps1` or `scripts/smoke.sh` |
+
+### OpenAPI and migrations
+
+- Specs: `api/openapi/{control,ledger,billing,payment,reconcile}.yaml`.
+- Codegen config: `api/oapi-codegen.yaml`; generated code committed; `make generate` leaves no diff.
+- Migrations: `migrations/<service>/NNNN_name.sql`, with a shared embed file and a goose runner per service.
+- Each service's `migrate` subcommand applies its own directory to `LG_DATABASE_URL`.
+- Initial schemas include the tables from the architecture document, plus `outbox` and `processed_events` where the service publishes or consumes.
+
+### Compose and CI
+
+- Compose service names: `postgres`, `redis`, `nats`, `jaeger`, `prometheus`, `grafana`, `otel-collector`, `gateway`, `control`, `ledger`, `billing`, `payment`, `reconcile`.
+- App services build from `deploy/Dockerfile` with a `SERVICE` build arg.
+- `docker compose config` must pass.
+- CI runs `golangci-lint`, `go test ./...`, `go build ./cmd/...`, and `docker compose config`.
+- Go version 1.27.
+
+### Canonical config, schema and OpenAPI
+
+Three documents are normative and must be followed exactly:
+
+- `docs/w1-config.md` — canonical YAML shape, field types, precedence, environment mapping and validation rules.
+- `docs/w1-schema.md` — exact `0001_init.sql` for all six databases: tables, columns, types, constraints and indexes.
+- `docs/w1-openapi.md` — frozen OpenAPI paths, methods and operationIds for the five generated specs, plus the gateway public operations.
+
+Both implementations must produce the same config shape, the same schema, and the same operation list. Internal code structure is still free; the contracts are not.
+
+### File-level W1 deliverables
+
+Both implementations must produce this baseline. Extra files are allowed; these must exist. The file plan has the rationale; this is the checklist.
+
+| Area | Required paths |
+|---|---|
+| Build | `go.mod`, `go.sum`, `Makefile`, `tools.go`, `.golangci.yml`, `.env.example`, `.gitignore` |
+| Entrypoints | `cmd/{gateway,control,ledger,billing,payment,reconcile}/main.go` |
+| Platform | `internal/platform/{config,log,observability,db,nats,redis,auth,crypt,ids,money,clock,httpx,outbox,service}/` |
+| Test harness | `internal/testkit/{postgres.go,redis.go,nats.go,assert.go}` |
+| Contracts | `api/openapi/{control,ledger,billing,payment,reconcile}.yaml`, `api/oapi-codegen.yaml`, `api/generated/**` |
+| Migrations | `migrations/embed.go`, `migrations/{gateway,control,ledger,billing,payment,reconcile}/0001_init.sql` |
+| Infrastructure | `docker-compose.yml`, `deploy/Dockerfile`, `deploy/compose/{prometheus.yml,otel-collector.yml,jaeger.yml,grafana/provisioning/**}` |
+| CI/scripts | `.github/workflows/ci.yml`, `scripts/smoke.ps1`, `scripts/smoke.sh` |
+| Docs | `README.md`, `docs/adr/0001-service-decomposition.md` |
+| Tests | `internal/platform/{money,ids,crypt,config,httpx,db}/**/*_test.go`, `internal/platform/service/health_test.go` |
+
+### Minimum public interfaces
+
+These are the **only** function-level contracts. Everything inside a package is free. The goal is mergeable seams, not identical internals.
+
+| Package | Required public surface |
+|---|---|
+| `config` | `Load(service string) (Config, error)`; `Config` carries service name, HTTP address, DB/Redis/NATS URLs, OTLP endpoint, log level, shutdown timeout |
+| `log` | `New(service, level string) *slog.Logger` |
+| `ids` | `New() uuid.UUID`; `NewPrefixed(prefix string) string` |
+| `money` | `type MicroUSD int64`; `Parse(string) (MicroUSD, error)`; `String()`; overflow-checked `Add`, `Sub`, `Mul` |
+| `clock` | `type Clock interface { Now() time.Time }`; `System()`; `NewFake(time.Time)` |
+| `db` | `Connect(ctx, dsn) (*pgxpool.Pool, error)`; `Migrate(ctx, pool, service string, fs fs.FS) error` |
+| `redis` | `Connect(ctx, url) (*redis.Client, error)` |
+| `nats` | `Connect(ctx, url) (*nats.Conn, jetstream.JetStream, error)` |
+| `auth` | `ServiceTokens(map[string]string) func(http.Handler) http.Handler`; `WithCaller(ctx, service)` |
+| `crypt` | `NewAESGCM(key []byte) (*Cipher, error)`; `Encrypt`, `Decrypt` |
+| `httpx` | `JSON`, `Error`, `RequestID`, `Recover`, `Logging` middleware/handlers |
+| `outbox` | `type Event struct { ID uuid.UUID; Type string; Payload []byte; OccurredAt time.Time }`; `type Writer interface { Enqueue(ctx, tx, Event) error }` |
+| `service` | `Run(ctx, cfg, deps, routes) error`; health and readiness handlers |
+| `cmd/*` | `serve` and `migrate` subcommands |
+| `migrations` | `FS` via `//go:embed */*.sql` |
+
+HTTP routes: `/healthz`, `/readyz`, `/metrics` on every service. Internal service APIs are OpenAPI-generated; the generated `ServerInterface` is the contract.
+
+### Code standards and naming
+
+- `gofmt` and `goimports` clean; `golangci-lint` passes with the committed config.
+- `context.Context` is the first parameter on any function that does I/O; never store it in a struct.
+- Wrap errors with `fmt.Errorf("...: %w", err)`; no `panic` in library code; `main` returns errors to the process.
+- No global mutable state; dependencies are constructor-injected. Accept interfaces at the consumer, return concrete types from constructors.
+- No `util` or `common` packages; name packages by what they own.
+- `slog` only; no `fmt.Println` in services. Log keys: `service`, `request_id`, `trace_id`, `workspace_id`, `attempt_id`.
+- Naming: `ID`, `URL`, `HTTP`, `API`, `JSON`, `USD`, `CNY`, `MicroUSD`; `WorkspaceID`, `RequestID`, `SettlementID`. Go package names are short, lowercase, no underscores.
+- Domain terms are fixed: Account, Workspace, User, APIKey, Wallet, LedgerAccount, LedgerEntry, Reservation, Settlement, UsageAttempt, PriceSnapshot, Subscription, Grant, PaymentIntent, FXGainLoss, ReconciliationItem.
+- Environment variables use the `LG_` prefix exactly as listed. Database names use `ledgergate_<service>`.
+- Database table names follow the architecture document; columns use `snake_case`; every mutable table has `created_at` and `updated_at` as `timestamptz`.
+- JSON uses `snake_case`; timestamps are RFC3339 UTC; money fields are integer micro-USD with a `_micro_usd` suffix.
+- Error codes are `snake_case`: `invalid_request`, `unauthorized`, `insufficient_balance`, `rate_limited`, `provider_error`, `internal_error`.
+- Tests: stdlib `testing` plus `testify/require` where it improves readability; table-driven; `t.Parallel` where safe; no `time.Sleep` for synchronization. Integration tests use testcontainers; HTTP tests use `httptest`.
+- Commits use Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`); one logical change per commit; no secrets or `.env`.
+
+### W1 acceptance checklist
+
+A branch is W1-complete only if every box is true:
+
+- [ ] `make generate` leaves no git diff.
+- [ ] `make lint` reports zero issues.
+- [ ] `make test` passes.
+- [ ] `make build` produces six binaries.
+- [ ] `make up` brings up six healthy app services plus infrastructure.
+- [ ] `make migrate` applies all six schemas and is idempotent on a second run.
+- [ ] `make smoke` gets 200 from `/healthz` and `/readyz` on all six services.
+- [ ] `/readyz` returns 503 when its database is unreachable.
+- [ ] `/readyz` returns 503 when Redis is unreachable for the gateway.
+- [ ] `/readyz` returns 503 when NATS is unreachable.
+- [ ] SIGTERM drains in-flight requests and exits within `LG_HTTP_SHUTDOWN_TIMEOUT`.
+- [ ] Missing required config fails fast with a clear error.
+- [ ] `/metrics` is scraped by Prometheus for all six services.
+- [ ] A request produces a Jaeger trace.
+- [ ] Logs are JSON and carry `service`, `request_id`, `trace_id`.
+- [ ] OpenAPI paths, methods and operationIds match `docs/w1-openapi.md`.
+- [ ] OpenAPI-generated servers compile; no business logic is stubbed in a way that breaks the build.
+- [ ] `docker compose config` passes.
+- [ ] CI is green.
+- [ ] `README.md` quickstart works from a clean checkout.
+- [ ] No secrets, `.env`, or database volumes are committed.
+- [ ] W1 non-goals are respected: no business logic, no React.
+
+## 3. Full W1 brief (identical for both agents)
+
+You are implementing the LedgerGate W1 foundation. Another agent is independently implementing the same scope in a separate worktree. You must not read, fetch, or communicate with that worktree or branch.
+
+Worktree: `<YOUR_WORKTREE>`
+Branch: `<YOUR_BRANCH>`
+
+Read first, in this order:
+
+1. `docs/w1-contract.md` — shared interfaces and rules.
+2. `docs/w1-config.md` — normative config YAML and environment mapping.
+3. `docs/w1-schema.md` — normative DDL for all six databases.
+4. `docs/w1-openapi.md` — frozen OpenAPI paths, methods and operationIds.
+5. `docs/architecture.md` — service boundaries, data ownership, money path.
+6. `docs/file-plan.md` — W1 file forecast.
+7. `docs/delivery-plan.md` — W1 definition of done.
+8. `.scratch/ledgergate-mvp/spec.md` — the product spec.
+
+Deliver the full W1 foundation:
+
+- Go module `github.com/NicoYazawa/LedgerGate`, Go 1.27.
+- Root build files: `go.mod`, `go.sum`, `Makefile`, `tools.go`, `.golangci.yml`, `.env.example`, `.gitignore`.
+- Platform packages: config, log, observability, db, nats, redis, auth, crypt, ids, money, clock, httpx, outbox skeleton, service bootstrap.
+- Six `cmd` entrypoints with `serve` and `migrate` behavior.
+- `/healthz`, `/readyz`, `/metrics` on every service.
+- OpenAPI specs for control, ledger, billing, payment, reconcile; generated code; `make generate` idempotent.
+- Initial migrations for all six databases; embedded filesystem; goose runner per service.
+- `docker-compose.yml` with Postgres 17, Redis 7, NATS JetStream, Jaeger, Prometheus, Grafana, OTel collector, and the six services.
+- `deploy/Dockerfile` multi-stage build with a `SERVICE` build arg.
+- Prometheus scrape config, OTel collector config, Grafana datasources, Jaeger wiring.
+- GitHub Actions CI with lint, test, build, and `docker compose config`.
+- Smoke scripts that hit `/healthz` and `/readyz` on all six ports.
+- `README.md`, `docs/adr/0001-service-decomposition.md`.
+- Unit tests for money, IDs, crypto, config, HTTP errors, health/readiness, and the migration runner.
+
+Definition of done:
+
+```powershell
+make generate
+make lint
+make test
+make build
+make up
+make migrate
+make smoke
+```
+
+All must pass. Jaeger, Prometheus and Grafana must be reachable. Logs must carry `service`, `request_id`, `trace_id`.
+
+Rules:
+
+- No business logic for ledger, billing, payment or reconcile yet; W1 is the foundation.
+- No React app; that starts in W6.
+- Use the shared ports, env names, database names and health paths exactly.
+- Commit in logical chunks. No secrets, no `.env`, no database volumes.
+- Do not edit the other worktree or branch.
+- Stop after W1. Do not start W2.
+- If you cannot satisfy something, record it in `HANDOFF.md` and in your final report; do not silently change the contract.
+
+Timebox: both agents get the same timebox. Do not extend one without extending the other.
+
+Final report:
+
+- What you built, grouped by area.
+- Key design choices and why.
+- Every command you ran and its result.
+- Deviations from the contract.
+- Known gaps or risks.
+- What you would improve with another day.
+
+## 4. Independence rules
+
+- The only difference between the two briefs is the worktree path and branch name. Do not label one as the "control" or the "better" one.
+- Neither agent sees the other's branch, commits, notes or output.
+- Both start from the same base commit.
+- Both get the same timebox and the same definition of done.
+- The implementers do not judge their own work; a separate judge compares them.
+
+## 5. Comparison rubric
+
+The judge scores each branch from 1 to 5 on:
+
+| Dimension | What to look for |
+|---|---|
+| Contract adherence | Ports, env names, DB names, health paths, Makefile targets, compose service names, frozen OpenAPI operations |
+| Gate | Every W1 command passes from a clean checkout |
+| Simplicity | Fewer moving parts, clear package boundaries, no speculative abstraction |
+| Tests | Behavior-level tests, meaningful failure cases, not just coverage |
+| Operability | Ready checks, structured logs, traces, metrics, graceful shutdown |
+| Forward compatibility | Migration/embed design, outbox shape, service boundaries that will survive W2–W5 |
+| Docs | README and ADR explain the system without hand-waving |
+
+Hard rule: a branch that does not pass the full gate cannot win, regardless of elegance.
+
+Tie-breaker order: simpler architecture, then better tests, then fewer deviations from the contract.
+
+## 6. Judge brief
+
+You are the judge. You did not write either implementation.
+
+Read `docs/w1-contract.md`, `docs/architecture.md`, `docs/file-plan.md`, `docs/delivery-plan.md`, and `.scratch/ledgergate-mvp/spec.md`.
+
+For each branch:
+
+1. Check it out in its worktree.
+2. Run `git log --oneline --graph` and `git diff --stat main...<branch>`.
+3. Run the full W1 gate.
+4. Inspect the code and tests.
+5. Score the branch against the rubric with evidence.
+
+Produce:
+
+- A side-by-side table of scores and gate results.
+- A short list of what each branch does better.
+- A recommendation: merge branch X as-is, or create an integration branch from X and port specific paths/commits from Y.
+- Do not modify either branch.
+- Do not average away a failed gate.
+
+## 7. Merge strategy
+
+**Winner takes the branch, not a literal merge.**
+
+1. Merge the winner into `main` with `--no-ff`.
+2. Run the full gate on `main`.
+3. If the loser has clearly better isolated pieces, create `w1-integration` from the winner and port only those paths or commits. Re-run the gate.
+4. Never merge both branches wholesale.
+5. Delete or archive the losing worktree after recording what was learned; keep the branch only if it is useful as a reference.
+
+Useful comparison commands:
+
+```powershell
+git log --oneline --graph --all
+git diff --stat main...w1-alpha
+git diff --stat main...w1-beta
+git diff w1-alpha..w1-beta -- <path>
+```
+
+## 8. Integration gate
+
+From the merged `main`:
+
+```powershell
+make generate
+make lint
+make test
+make build
+make up
+make migrate
+make smoke
+```
+
+Then check Jaeger (`http://localhost:16686`), Prometheus (`http://localhost:9090`), Grafana (`http://localhost:3000`). Fix integration issues in one dedicated commit. Do not rewrite the winner's history.

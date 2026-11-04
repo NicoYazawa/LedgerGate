@@ -1,0 +1,37 @@
+@startuml LedgerGate-Context
+title LedgerGate — System Context
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+actor "Customer / Developer" as Customer
+actor "Admin / Operator" as Admin
+
+rectangle "LedgerGate" {
+  [Gateway + Control Plane] as Core
+}
+
+cloud "LLM providers" {
+  [OpenAI] as OpenAI
+  [Anthropic] as Anthropic
+  [OpenAI-compatible provider] as Compat
+}
+
+cloud "Payment providers" {
+  [Stripe test mode] as Stripe
+  [Alipay sandbox] as Alipay
+}
+
+Customer --> Core : OpenAI-compatible API\n(API Key)
+Admin --> Core : Admin UI / API
+
+Core --> OpenAI : Chat Completions + SSE
+Core --> Anthropic : Messages + SSE
+Core --> Compat : OpenAI-compatible + SSE
+
+Core --> Stripe : checkout / refund
+Stripe --> Core : webhooks
+Core --> Alipay : pay / refund
+Alipay --> Core : async notify
+
+@enduml

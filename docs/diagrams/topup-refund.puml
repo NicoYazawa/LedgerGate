@@ -1,0 +1,29 @@
+@startuml LedgerGate-TopupRefund
+title LedgerGate — Top-up, refund and FX
+
+autonumber
+skinparam shadowing false
+
+actor "Customer" as U
+participant "control" as CTL
+participant "payment" as PAY
+participant "Stripe / Alipay" as PSP
+participant "NATS JetStream" as N
+participant "ledger" as L
+
+U -> CTL : create top-up (USD or CNY)
+CTL -> PAY : CreateCheckout
+PAY -> PSP : checkout session
+PSP --> U : hosted checkout
+PSP -> PAY : webhook payment.succeeded\n(event_id)
+PAY -> PAY : verify signature + idempotency
+PAY -> N : payment.succeeded\n(presentment, settled_usd, fx_rate, fee)
+N -> L : credit wallet; record FX gain/loss
+
+U -> CTL : request refund
+CTL -> PAY : Refund(payment_id, reason)
+PAY -> PSP : refund
+PSP -> PAY : webhook refund.succeeded
+PAY -> N : payment.refunded
+N -> L : reverse entry (wallet debit / PSP clearing)
+@enduml

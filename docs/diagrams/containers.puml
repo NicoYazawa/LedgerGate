@@ -1,0 +1,48 @@
+@startuml LedgerGate-Containers
+title LedgerGate — Container view
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Customer / Developer" as Customer
+actor "Admin / Operator" as Admin
+
+package "LedgerGate" {
+  [gateway\nOpenAI-compatible ingress\nSSE / routing / failover / rate limit\nreserve client + settlement outbox] as GW
+  [control\nidentity + admin BFF\nReact UI + audit] as CTL
+  [ledger\nwallet / double-entry\nreservation / settlement / usage] as LED
+  [billing\nprice catalog / rating\nsubscription / grants] as BIL
+  [payment\nStripe + Alipay sandbox\ntop-up / refund / webhook / FX] as PAY
+  [reconcile\nprovider / PSP / ledger\nreconciliation] as REC
+}
+
+database "PostgreSQL 17\none database per service" as PG
+database "Redis 7\nrate limit + API-key cache" as RD
+queue "NATS JetStream\nevents + outbox relay" as NATS
+
+Customer --> GW : OpenAI-compatible API
+Admin --> CTL : Admin UI / API
+
+GW --> LED : Reserve (sync)
+GW --> NATS : usage.recorded (outbox)
+NATS --> LED : settle
+
+GW --> RD : key cache
+CTL --> NATS : apikey events
+NATS --> GW : invalidate cache
+
+BIL --> NATS : price.snapshot / grant
+NATS --> LED : price snapshots / grants
+
+PAY --> NATS : payment events
+NATS --> LED : credit / debit
+
+GW --> PG
+CTL --> PG
+LED --> PG
+BIL --> PG
+PAY --> PG
+REC --> PG
+
+@enduml

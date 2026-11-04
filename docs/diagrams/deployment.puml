@@ -1,0 +1,44 @@
+@startuml LedgerGate-Deployment
+title LedgerGate — Local deployment (compose / kind)
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+node "docker compose / kind" {
+  node "gateway" as GW
+  node "control + React" as CTL
+  node "ledger" as LED
+  node "billing" as BIL
+  node "payment" as PAY
+  node "reconcile" as REC
+  database "PostgreSQL 17" as PG
+  database "Redis 7" as RD
+  queue "NATS JetStream" as NATS
+  node "Prometheus" as PROM
+  node "Grafana" as GRAF
+  node "OTel collector" as OTEL
+}
+
+GW --> PG
+GW --> RD
+GW --> NATS
+CTL --> PG
+CTL --> NATS
+LED --> PG
+LED --> NATS
+BIL --> PG
+BIL --> NATS
+PAY --> PG
+PAY --> NATS
+REC --> PG
+REC --> NATS
+
+GW --> OTEL
+CTL --> OTEL
+LED --> OTEL
+BIL --> OTEL
+PAY --> OTEL
+REC --> OTEL
+OTEL --> PROM
+PROM --> GRAF
+@enduml
