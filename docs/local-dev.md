@@ -37,7 +37,7 @@ Generate it with:
 | `PROMETHEUS_PORT` | 9090 | 9090 | 19090 | 29090 |
 | `GRAFANA_PORT` | 3000 | 3000 | 13000 | 23000 |
 
-Container-internal communication always uses service names and container ports (`postgres:5432`, `ledger:8082`, `otel-collector:4317`). Host ports are only for smoke tests and human access.
+Container-internal communication always uses service names and container ports (`postgres:5432`, `ledger:8082`, `jaeger:4317`). Host ports are only for smoke tests and human access.
 
 ## Compose rules
 

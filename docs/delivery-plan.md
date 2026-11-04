@@ -16,7 +16,7 @@ This is a milestone plan, not a file-by-file schedule. The weekly code content i
 
 | Week | Outcome | Gate |
 |---|---|---|
-| W1 | Six service skeletons boot; `docker compose up` brings up Postgres, Redis, NATS, Prometheus, Grafana; OpenAPI + codegen wired; platform packages (config, slog/OTel, pgx, outbox, bearer auth); health endpoints. | Compose is green; CI runs lint, tests and build. |
+| W1 | Six service skeletons boot; `docker compose up` brings up Postgres, Redis, NATS, Jaeger, Prometheus, Grafana; OpenAPI + codegen wired; platform packages (config, slog/OTel, pgx, outbox, bearer auth); health endpoints. | Compose is green; CI runs lint, tests and build. |
 | W2–W3 | Ledger core: wallets, double-entry accounts and entries, reservations, settlements, credit lots; `Reserve`/`Release`/`Settle` APIs with idempotency; property tests for invariants. | Concurrent reserve test cannot overdraw; balance equals sum of entries; duplicate settle is a no-op. |
 | W4–W5 | Gateway and money path: OpenAI non-stream and stream; Anthropic text + tool calling; OpenAI-compatible ingress; usage extraction; reserve before upstream; outbox → NATS → ledger settle; zero-output, disconnect, failover and all-fail paths. | End-to-end stream settles correctly; concurrency, disconnect and failover tests pass. **W5 go/no-go.** |
 | W6 | Control: accounts, workspaces, users, API keys; hashed keys; Redis cache + NATS invalidation; admin auth (Argon2id + session); audit log; admin BFF endpoints. | Key revocation reaches the gateway within the configured TTL; RBAC tests pass. |

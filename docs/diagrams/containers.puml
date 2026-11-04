@@ -17,8 +17,8 @@ package "LedgerGate" {
   [reconcile\nprovider / PSP / ledger\nreconciliation] as REC
 }
 
-database "PostgreSQL 17\none database per service" as PG
-database "Redis 7\nrate limit + API-key cache" as RD
+database "PostgreSQL 18\none database per service" as PG
+database "Redis 7.4\nrate limit + API-key cache" as RD
 queue "NATS JetStream\nevents + outbox relay" as NATS
 
 Customer --> GW : OpenAI-compatible API

@@ -166,7 +166,7 @@ W1 is detailed because it starts immediately. W2–W10 are coarse forecasts; the
 | 1 | Module, build, config, IDs, money, clock, logging | `go.mod`, `go.sum`, `Makefile`, `.env.example`, `.gitignore`, `.golangci.yml`, `tools.go`, `internal/platform/{config,log,ids,money,clock,httpx}/*.go` + tests |
 | 2 | Service bootstrap, six entrypoints, health/readiness, service auth, crypto | `internal/platform/service/{service.go,health.go,routes.go}`, `internal/platform/{db,nats,redis,auth,crypt}/*.go`, `cmd/{gateway,control,ledger,billing,payment,reconcile}/main.go` |
 | 3 | OpenAPI specs, codegen config, initial migrations, migrate command | `api/openapi/*.yaml`, `api/oapi-codegen.yaml`, `api/generated/**`, `migrations/*/0001_init.sql`, `internal/platform/db/migrate.go`, `cmd/*/main.go` migrate subcommand |
-| 4 | Compose, Dockerfile, observability stack, CI | `docker-compose.yml`, `deploy/Dockerfile`, `deploy/compose/{prometheus.yml,otel-collector.yml,jaeger.yml}`, `deploy/compose/grafana/provisioning/**`, `.github/workflows/ci.yml`, `scripts/smoke.ps1`, `scripts/smoke.sh` |
+| 4 | Compose, Dockerfile, observability stack, CI | `docker-compose.yml`, `deploy/Dockerfile`, `deploy/compose/{prometheus.yml,jaeger.yml}`, `deploy/compose/grafana/provisioning/**`, `.github/workflows/ci.yml`, `scripts/smoke.ps1`, `scripts/smoke.sh` |
 | 5 | Buffer: compose smoke, CI fixes, README, W1 gate | `README.md`, `docs/adr/0001-service-decomposition.md`, fixes across W1 files |
 
 **File-by-file**
@@ -174,8 +174,8 @@ W1 is detailed because it starts immediately. W2–W10 are coarse forecasts; the
 | Area | Files | Purpose |
 |---|---|---|
 | Build | `go.mod`, `go.sum`, `Makefile`, `.env.example`, `.gitignore`, `.golangci.yml`, `tools.go` | Module `github.com/NicoYazawa/LedgerGate`; targets `generate`, `lint`, `test`, `build`, `up`, `down`, `migrate`; pinned codegen tools |
-| Local infra | `docker-compose.yml`, `deploy/Dockerfile` | Postgres 17, Redis 7, NATS 2.10 JetStream, Jaeger, Prometheus, Grafana, OTel collector, six services; multi-stage Go image |
-| Observability config | `deploy/compose/prometheus.yml`, `deploy/compose/otel-collector.yml`, `deploy/compose/jaeger.yml`, `deploy/compose/grafana/provisioning/datasources.yml`, `deploy/compose/grafana/provisioning/dashboards.yml` | OTLP pipeline, Prometheus scrape config, Jaeger trace backend, Grafana datasources |
+| Local infra | `docker-compose.yml`, `deploy/Dockerfile` | Postgres 18, Redis 7.4, NATS 2.10 JetStream, Jaeger 1.60, Prometheus v3.1.0, Grafana 11.3.0, six services; multi-stage Go image |
+| Observability config | `deploy/compose/prometheus.yml`, `deploy/compose/jaeger.yml`, `deploy/compose/grafana/provisioning/datasources.yml`, `deploy/compose/grafana/provisioning/dashboards.yml` | OTLP endpoint, Prometheus scrape config, Jaeger trace backend, Grafana datasources |
 | CI | `.github/workflows/ci.yml` | `golangci-lint`, `go test ./...`, `go build ./cmd/...`, Docker build; Go 1.27 cache |
 | Entrypoints | `cmd/{gateway,control,ledger,billing,payment,reconcile}/main.go` | Load config, run service, graceful shutdown |
 | Shared bootstrap | `internal/platform/service/{service.go,health.go,routes.go}` | Common HTTP server, middleware, health/readiness, signal handling |

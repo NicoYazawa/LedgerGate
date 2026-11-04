@@ -7,7 +7,7 @@ Both implementations must create the same tables, columns, types, constraints an
 
 ## Conventions
 
-- PostgreSQL 17.
+- PostgreSQL 18.
 - IDs are application-generated UUIDv7 values of type `uuid`; no database defaults.
 - Money is `bigint` micro-USD. FX rates are `numeric(20,10)`.
 - Timestamps are `timestamptz` in UTC; mutable tables carry `created_at` and `updated_at`.
@@ -641,7 +641,7 @@ Notes:
 
 ## Validation
 
-- Apply each `0001_init.sql` to a fresh PostgreSQL 17 database.
+- Apply each `0001_init.sql` to a fresh PostgreSQL 18 database.
 - Run it twice: goose tracks migrations, so the second application must be a no-op.
 - Check `\d+ <table>` for every table; column types and nullability must match this document.
 - Foreign keys must resolve inside the same database only.

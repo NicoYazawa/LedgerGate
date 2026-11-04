@@ -11,12 +11,12 @@ node "docker compose / kind" {
   node "billing" as BIL
   node "payment" as PAY
   node "reconcile" as REC
-  database "PostgreSQL 17" as PG
-  database "Redis 7" as RD
+  database "PostgreSQL 18" as PG
+  database "Redis 7.4" as RD
   queue "NATS JetStream" as NATS
   node "Prometheus" as PROM
   node "Grafana" as GRAF
-  node "OTel collector" as OTEL
+  node "Jaeger" as JAEGER
 }
 
 GW --> PG
@@ -33,12 +33,11 @@ PAY --> NATS
 REC --> PG
 REC --> NATS
 
-GW --> OTEL
-CTL --> OTEL
-LED --> OTEL
-BIL --> OTEL
-PAY --> OTEL
-REC --> OTEL
-OTEL --> PROM
+GW --> JAEGER
+CTL --> JAEGER
+LED --> JAEGER
+BIL --> JAEGER
+PAY --> JAEGER
+REC --> JAEGER
 PROM --> GRAF
 @enduml

@@ -56,7 +56,7 @@ Infrastructure: Postgres `5432`, Redis `6379`, NATS `4222` (monitoring `8222`), 
 | `LG_DATABASE_URL` | Per-service Postgres DSN |
 | `LG_REDIS_URL` | Redis DSN; gateway uses it |
 | `LG_NATS_URL` | NATS URL |
-| `LG_OTLP_ENDPOINT` | OTLP gRPC endpoint, e.g. `otel-collector:4317` |
+| `LG_OTLP_ENDPOINT` | OTLP gRPC endpoint, e.g. `jaeger:4317` |
 | `LG_LOG_LEVEL` | `debug`, `info`, `warn`, `error` |
 | `LG_SERVICE_TOKENS` | JSON map of caller service to bearer token |
 | `LG_HTTP_SHUTDOWN_TIMEOUT` | Graceful shutdown timeout; default `10s` |
@@ -80,8 +80,8 @@ Every service exposes:
 | `make test` | Unit tests |
 | `make test-integration` | Testcontainers integration tests |
 | `make build` | Build six binaries into `bin/` |
-| `make up` | `docker compose up -d --build` |
-| `make down` | `docker compose down -v` |
+| `make up` | `docker compose -p $COMPOSE_PROJECT_NAME --env-file .env.local up -d --wait --build` |
+| `make down` | `docker compose -p $COMPOSE_PROJECT_NAME --env-file .env.local down -v --remove-orphans` |
 | `make logs` | Follow compose logs |
 | `make migrate` | Run the migrate subcommand for each service |
 | `make smoke` | Run `scripts/smoke.ps1` or `scripts/smoke.sh` |
@@ -96,7 +96,7 @@ Every service exposes:
 
 ### Compose and CI
 
-- Compose service names: `postgres`, `redis`, `nats`, `jaeger`, `prometheus`, `grafana`, `otel-collector`, `gateway`, `control`, `ledger`, `billing`, `payment`, `reconcile`.
+- Compose service names: `postgres`, `redis`, `nats`, `jaeger`, `prometheus`, `grafana`, `gateway`, `control`, `ledger`, `billing`, `payment`, `reconcile`.
 - App services build from `deploy/Dockerfile` with a `SERVICE` build arg.
 - `docker compose config` must pass.
 - CI runs `golangci-lint`, `go test ./...`, `go build ./cmd/...`, and `docker compose config`.
@@ -111,6 +111,10 @@ Every service exposes:
 - Never run bare `docker compose down -v`, `docker system prune`, or `docker volume prune`.
 - `make test` does not start Compose; integration tests use testcontainers with random ports.
 - Smoke scripts read the same `*_PORT` variables; no hardcoded 8080.
+
+### Container images
+
+Use the exact tags in `docs/images.md`. No `latest` tags, and no image downloads are required for W1. The local stack sends OTLP to Jaeger at `jaeger:4317`; there is no local OTel collector.
 
 ### Canonical config, schema and OpenAPI
 
@@ -134,7 +138,7 @@ Both implementations must produce this baseline. Extra files are allowed; these 
 | Test harness | `internal/testkit/{postgres.go,redis.go,nats.go,assert.go}` |
 | Contracts | `api/openapi/{control,ledger,billing,payment,reconcile}.yaml`, `api/oapi-codegen.yaml`, `api/generated/**` |
 | Migrations | `migrations/embed.go`, `migrations/{gateway,control,ledger,billing,payment,reconcile}/0001_init.sql` |
-| Infrastructure | `docker-compose.yml`, `deploy/Dockerfile`, `deploy/compose/{prometheus.yml,otel-collector.yml,jaeger.yml,grafana/provisioning/**}` |
+| Infrastructure | `docker-compose.yml`, `deploy/Dockerfile`, `deploy/compose/{prometheus.yml,jaeger.yml,grafana/provisioning/**}` |
 | Docker isolation | `scripts/worktree-env.ps1`, `.env.example` port variables, `.gitignore` entry for `.env.local` |
 | CI/scripts | `.github/workflows/ci.yml`, `scripts/smoke.ps1`, `scripts/smoke.sh` |
 | Docs | `README.md`, `docs/adr/0001-service-decomposition.md` |
@@ -203,6 +207,7 @@ A branch is W1-complete only if every box is true:
 - [ ] OpenAPI paths, methods and operationIds match `docs/w1-openapi.md`.
 - [ ] OpenAPI-generated servers compile; no business logic is stubbed in a way that breaks the build.
 - [ ] `docker compose config` passes with `--env-file .env.local`.
+- [ ] Container images match `docs/images.md`; no `latest` tags.
 - [ ] `make up` uses the project name and host ports from `.env.local`.
 - [ ] `make smoke` reads ports from environment variables, not hardcoded values.
 - [ ] `make test` does not start Compose.
@@ -225,10 +230,11 @@ Read first, in this order:
 2. `docs/w1-config.md` — normative config YAML and environment mapping.
 3. `docs/w1-schema.md` — normative DDL for all six databases.
 4. `docs/w1-openapi.md` — frozen OpenAPI paths, methods and operationIds.
-5. `docs/architecture.md` — service boundaries, data ownership, money path.
-6. `docs/file-plan.md` — W1 file forecast.
-7. `docs/delivery-plan.md` — W1 definition of done.
-8. `.scratch/ledgergate-mvp/spec.md` — the product spec.
+5. `docs/images.md` — pinned container image tags.
+6. `docs/architecture.md` — service boundaries, data ownership, money path.
+7. `docs/file-plan.md` — W1 file forecast.
+8. `docs/delivery-plan.md` — W1 definition of done.
+9. `.scratch/ledgergate-mvp/spec.md` — the product spec.
 
 Deliver the full W1 foundation:
 
@@ -239,9 +245,9 @@ Deliver the full W1 foundation:
 - `/healthz`, `/readyz`, `/metrics` on every service.
 - OpenAPI specs for control, ledger, billing, payment, reconcile; generated code; `make generate` idempotent.
 - Initial migrations for all six databases; embedded filesystem; goose runner per service.
-- `docker-compose.yml` with Postgres 17, Redis 7, NATS JetStream, Jaeger, Prometheus, Grafana, OTel collector, and the six services.
-- `deploy/Dockerfile` multi-stage build with a `SERVICE` build arg.
-- Prometheus scrape config, OTel collector config, Grafana datasources, Jaeger wiring.
+- `docker-compose.yml` with Postgres 18, Redis 7.4, NATS 2.10 JetStream, Jaeger 1.60, Prometheus v3.1.0, Grafana 11.3.0, and the six services.
+- `deploy/Dockerfile` multi-stage build with a `SERVICE` build arg, using `golang:1.27-alpine` and `alpine:3.23.5`.
+- Prometheus scrape config, Grafana datasources, Jaeger wiring.
 - GitHub Actions CI with lint, test, build, and `docker compose config`.
 - Smoke scripts that hit `/healthz` and `/readyz` on all six ports.
 - `README.md`, `docs/adr/0001-service-decomposition.md`.

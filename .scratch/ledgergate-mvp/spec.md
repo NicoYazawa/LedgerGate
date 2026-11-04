@@ -248,8 +248,8 @@ Discrepancies create reconciliation items. Adjustments require an administrator 
 ### Technology stack
 
 - Go 1.27, `net/http` with chi; OpenAPI-first with generated server/client code.
-- PostgreSQL 17 with pgx v5, sqlc, and goose migrations.
-- Redis 7 for rate limiting and API key cache.
+- PostgreSQL 18 with pgx v5, sqlc, and goose migrations.
+- Redis 7.4 for rate limiting and API key cache.
 - NATS JetStream for asynchronous events and outbox relay.
 - React 19, Vite, shadcn/ui, TanStack Query, and TanStack Table for the admin surface, embedded in the control service.
 - Docker Compose for local development; kind for a final Kubernetes acceptance deployment.
@@ -260,7 +260,7 @@ Discrepancies create reconciliation items. Adjustments require an administrator 
 
 ### Deployment and operations
 
-- Local topology: six services, one PostgreSQL instance with six databases, Redis, NATS JetStream, Jaeger, Prometheus, Grafana, and an OTel collector.
+- Local topology: six services, one PostgreSQL instance with six databases, Redis, NATS JetStream, Jaeger, Prometheus, and Grafana.
 - Each service exposes `/healthz` and `/readyz`.
 - No day-one Kubernetes; the final acceptance uses kind.
 - No multi-region, no 99.99 SLA, and no production payment processing.
