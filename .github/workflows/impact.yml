@@ -1,0 +1,75 @@
+name: Impact gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: impact-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  impact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install codegraph
+        run: npm install -g @optave/codegraph@3.17.0
+
+      - name: Cache codegraph graph
+        if: ${{ hashFiles('**/*.go') != '' }}
+        uses: actions/cache@v4
+        with:
+          path: .codegraph
+          key: codegraph-${{ runner.os }}-${{ hashFiles('go.sum', 'go.mod') }}-${{ github.sha }}
+          restore-keys: |
+            codegraph-${{ runner.os }}-${{ hashFiles('go.sum', 'go.mod') }}-
+
+      - name: Build impact artifacts and run gate
+        shell: pwsh
+        env:
+          CODEGRAPH_ENFORCE: ${{ vars.CODEGRAPH_ENFORCE }}
+        run: |
+          $enforce = $env:CODEGRAPH_ENFORCE -eq 'true'
+          $allowSignatures = "${{ contains(github.event.pull_request.labels.*.name, 'signature-change') }}" -eq 'true'
+          ./scripts/pr-impact.ps1 `
+            -Base "origin/${{ github.base_ref }}" `
+            -Out "artifacts/pr-impact" `
+            -BlastRadius 20 `
+            -AllowSignatures:$allowSignatures `
+            -Enforce:$enforce
+
+      - name: Upload impact artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-impact
+          path: artifacts/pr-impact
+          if-no-files-found: ignore
+
+      - name: Post or update PR comment
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/post-impact-comment.ps1 `
+            -Pr ${{ github.event.pull_request.number }} `
+            -Path "artifacts/pr-impact/summary.md"

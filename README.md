@@ -39,5 +39,6 @@ Follow [`docs/pr-workflow.md`](docs/pr-workflow.md). In short:
 - Every PR must build, test, pass independent review, and have a rollback plan.
 - Incomplete user-visible behavior is behind a default-off feature flag.
 - Reviewer and fixer prompts live in [`docs/prompts/`](docs/prompts/).
+- Impact diagrams and the codegraph gate are described in [`docs/pr-workflow.md`](docs/pr-workflow.md). Run `scripts/pr-impact.ps1` before review when code changes.
 
 Local Docker isolation, pinned images and smoke scripts are documented in [`docs/local-dev.md`](docs/local-dev.md) and [`docs/images.md`](docs/images.md).

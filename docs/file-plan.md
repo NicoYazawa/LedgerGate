@@ -199,7 +199,7 @@ W1 is delivered as several small PRs, not one weekly batch. The day-by-day table
 | HTTP helpers | `internal/platform/httpx/{respond.go,middleware.go,health.go,respond_test.go}` | JSON errors (OpenAI shape for gateway, problem shape for admin/internal), request ID, recovery, logging |
 | Outbox skeleton | `internal/platform/outbox/outbox.go` | Shared outbox row/interface; implementation lands with gateway in W4 |
 | Feature flags | `internal/platform/flags/{flags.go,flags_test.go}` | Env-backed default-off flags; both states tested; no billing semantics |
-| Process | `docs/pr-workflow.md`, `docs/prompts/pr-reviewer.md`, `docs/prompts/pr-fixer.md`, `.github/pull_request_template.md`, `scripts/pr-size.ps1` | Risk-tier PR gate, independent review and fixer prompts, size check |
+| Process | `docs/pr-workflow.md`, `docs/prompts/pr-reviewer.md`, `docs/prompts/pr-fixer.md`, `.github/pull_request_template.md`, `.github/workflows/impact.yml`, `scripts/pr-size.ps1`, `scripts/pr-impact.ps1`, `scripts/post-impact-comment.ps1` | Risk-tier PR gate, impact diagrams and codegraph gate, independent review and fixer prompts, size check |
 | Contracts | `api/openapi/{control,ledger,billing,payment,reconcile}.yaml`, `api/oapi-codegen.yaml`, `api/generated/**` | OpenAPI-first contracts; generated server/client stubs |
 | Schemas | `migrations/{gateway,control,ledger,billing,payment,reconcile}/0001_init.sql` | Initial tables per database, including `outbox` and `processed_events` where needed |
 | Smoke scripts | `scripts/smoke.ps1`, `scripts/smoke.sh` | Curl every `/healthz` and `/readyz`; fail on non-200 |

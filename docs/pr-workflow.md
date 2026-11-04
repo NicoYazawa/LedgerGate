@@ -80,6 +80,39 @@ A PR is ready for review only when all of these are true:
 - `scripts/pr-size.ps1` passes or the `size:large` label is present with justification.
 - No secrets, `.env` files, database volumes, or build output are committed.
 
+## Impact diagrams and codegraph gate
+
+When a PR changes code files, `scripts/pr-impact.ps1` runs `codegraph` and writes artifacts to `artifacts/pr-impact/`:
+
+| Artifact | Source | Purpose |
+|---|---|---|
+| `structure.mmd` | `codegraph branch-compare <base> HEAD --format mermaid` | Added / changed / removed symbols |
+| `impact.mmd` | `codegraph diff-impact <base> --format mermaid` | Affected callers and readers |
+| `check.json` | `codegraph check <base> --cycles --signatures --blast-radius 20 --boundaries -j` | Gate predicates |
+| `rules.txt` | `codegraph check --rules` | Manifesto rule table |
+| `summary.md` | generated | Sticky PR comment body |
+
+Run locally:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-impact.ps1 -Base origin/main
+```
+
+The script compares committed changes only. Commit your branch before running it; untracked files are not counted.
+
+Policy:
+
+- CI starts **advisory**. Set the repository variable `CODEGRAPH_ENFORCE=true` to make the gate required.
+- Hard gate: dependency cycles, blast radius above the configured threshold, exported signature changes without a `signature-change` waiver.
+- To waive the signature predicate, add the `signature-change` label to the PR and justify it in the PR body. The reviewer must still approve the change.
+- Manifesto rules are advisory until the thresholds are tuned for this repo.
+- `--boundaries` requires a CODEOWNERS file; it is skipped when none exists.
+- Pin `@optave/codegraph@3.17.0`. CI uses `fetch-depth: 0` and caches the `.codegraph/` graph.
+- Docs-only PRs skip the gate; the risk tiers and review still apply.
+- A green gate does not replace tests or review. codegraph sees code dependencies, not money invariants, SQL semantics, OpenAPI compatibility or runtime behavior.
+
+`mermaidiff` is a **reviewer aid**, not a gate. It produces a semantic flow brief with payload changes and open questions. Do not make it a required check. Version note: mermaidiff 0.1.5 calls `codegraph callers/callees`, which codegraph 3.17.0 does not expose; use it for the semantic brief and run codegraph separately until the versions align.
+
 ## Review
 
 The reviewer is independent, read-only, and adversarial. It runs the tests and reproduces findings.
@@ -194,6 +227,9 @@ Track these per iteration:
 ## Tooling
 
 - `scripts/pr-size.ps1` — risk-tier size check.
+- `scripts/pr-impact.ps1` — codegraph structure/impact artifacts and gate.
+- `scripts/post-impact-comment.ps1` — sticky PR comment for the impact summary.
+- `.github/workflows/impact.yml` — PR impact job.
 - `.github/pull_request_template.md` — PR contract.
 - `docs/prompts/pr-reviewer.md` — independent reviewer prompt.
 - `docs/prompts/pr-fixer.md` — regression-test-first fixer prompt.
@@ -213,6 +249,7 @@ Track these per iteration:
 - OpenAPI diff against `main`
 - migration apply on a fresh PostgreSQL 18 database
 - `pwsh scripts/pr-size.ps1 -Base origin/main -Enforce`
+- `scripts/pr-impact.ps1` when code files change (advisory until `CODEGRAPH_ENFORCE=true`; then required)
 - secret scanning
 - `docker compose config` when compose files change
 

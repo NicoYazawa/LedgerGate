@@ -122,7 +122,7 @@ The milestone requires this baseline. A single PR does not have to create all of
 | Migrations | `migrations/embed.go`, `migrations/{gateway,control,ledger,billing,payment,reconcile}/0001_init.sql` |
 | Infrastructure | `docker-compose.yml`, `deploy/Dockerfile`, `deploy/compose/{prometheus.yml,jaeger.yml,grafana/provisioning/**}` |
 | Docker isolation | `scripts/worktree-env.ps1`, `.env.example` port variables, `.gitignore` entry for `.env.local` |
-| CI/scripts | `.github/workflows/ci.yml`, `scripts/smoke.ps1`, `scripts/smoke.sh` |
+| CI/scripts | `.github/workflows/ci.yml`, `.github/workflows/impact.yml`, `scripts/smoke.ps1`, `scripts/smoke.sh`, `scripts/pr-impact.ps1`, `scripts/post-impact-comment.ps1` |
 | Docs | `README.md`, `docs/adr/0001-service-decomposition.md` |
 | Tests | `internal/platform/{money,ids,crypt,config,httpx,db,flags}/**/*_test.go`, `internal/platform/service/health_test.go` |
 

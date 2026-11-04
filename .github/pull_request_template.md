@@ -48,6 +48,7 @@
 - [ ] Event changes are versioned or optional
 - [ ] Migration follows expand–contract
 - [ ] Config changes are optional with safe defaults
+- [ ] Exported signature change; `signature-change` label applied and justified
 
 ## Tests and evidence
 
@@ -63,6 +64,14 @@ Evidence:
 ```text
 <!-- commands and results -->
 ```
+
+## Impact diagrams
+
+- [ ] `artifacts/pr-impact/summary.md` reviewed
+- [ ] Structure diff attached to the PR
+- [ ] Impact graph attached to the PR
+- [ ] codegraph gate passed, or advisory failures explained
+- [ ] `mermaidiff` brief reviewed (optional, reviewer aid only)
 
 ## Rollback
 
@@ -81,6 +90,7 @@ Evidence:
 - [ ] OpenAPI diff is additive
 - [ ] Migrations apply to a fresh PostgreSQL 18 database
 - [ ] `scripts/pr-size.ps1` passes
+- [ ] codegraph impact gate run; failures explained or waived
 - [ ] No secrets, `.env`, database volumes or build output committed
 - [ ] Logs, metrics and traces exist for new paths
 - [ ] No unrelated changes or drive-by refactors

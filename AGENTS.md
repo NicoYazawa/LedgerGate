@@ -19,3 +19,4 @@ Single-context: `GLOSSARY.md` at the repo root and ADRs under `docs/adr/`. See `
 - Normative contracts: `docs/w1-config.md`, `docs/w1-schema.md`, `docs/w1-openapi.md`, `docs/images.md`, `docs/local-dev.md`.
 - Reviewer and fixer prompts: `docs/prompts/`.
 - PR size check: `scripts/pr-size.ps1`.
+- Impact gate: `scripts/pr-impact.ps1` and `.github/workflows/impact.yml`.

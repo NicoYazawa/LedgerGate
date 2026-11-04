@@ -38,7 +38,7 @@ function Get-Tier {
 
 function Test-Excluded {
     param([string]$Path)
-    if ($Path -match '^(vendor|node_modules|bin|dist)/') { return $true }
+    if ($Path -match '^(vendor|node_modules|bin|dist|\.codegraph|\.mermaidiff|artifacts)/') { return $true }
     if ($Path -match '(^|/)api/generated/') { return $true }
     if ($Path -match '\.gen\.go$') { return $true }
     if ($Path -match '^coverage') { return $true }
