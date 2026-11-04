@@ -199,7 +199,7 @@ A branch is W1-complete only if every box is true:
 
 ## 3. Full W1 brief (identical for both agents)
 
-You are implementing the LedgerGate W1 foundation. Another agent is independently implementing the same scope in a separate worktree. You must not read, fetch, or communicate with that worktree or branch.
+You are implementing the LedgerGate W1 foundation. Work only inside the worktree below. Do not inspect or modify sibling directories, other git worktrees, or the main repository.
 
 Worktree: `<YOUR_WORKTREE>`
 Branch: `<YOUR_BRANCH>`
@@ -252,7 +252,7 @@ Rules:
 - No React app; that starts in W6.
 - Use the shared ports, env names, database names and health paths exactly.
 - Commit in logical chunks. No secrets, no `.env`, no database volumes.
-- Do not edit the other worktree or branch.
+- Do not edit anything outside this worktree, including the main repository or sibling worktrees.
 - Stop after W1. Do not start W2.
 - If you cannot satisfy something, record it in `HANDOFF.md` and in your final report; do not silently change the contract.
 
@@ -268,6 +268,8 @@ Final report:
 - What you would improve with another day.
 
 ## 4. Independence rules
+
+These rules are for the orchestrator and the judge. Do not include them in the agent-facing prompt; the agent only needs the task and the worktree boundary.
 
 - The only difference between the two briefs is the worktree path and branch name. Do not label one as the "control" or the "better" one.
 - Neither agent sees the other's branch, commits, notes or output.
