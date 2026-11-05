@@ -71,8 +71,9 @@ Evidence:
 - [ ] Go package impact graph reviewed
 - [ ] `check.json` predicates passed, or advisory failures explained
 - [ ] CodeGraph bundle committed under `docs/codegraph/<stage>/`
-- [ ] `mermaidiff` brief reviewed (optional, reviewer aid only)
+- [ ] Mermaidiff source and HTML committed under `docs/reviews/<stage>/`
 - [ ] Stage PlantUML source and rendered SVG committed under `docs/diagrams/stages/`
+- [ ] `make verify-artifacts STAGE=<stage>` passes
 
 ## Rollback
 
@@ -93,7 +94,7 @@ Evidence:
 - [ ] Migrations apply to a fresh PostgreSQL 18 database
 - [ ] `scripts/pr-size.ps1` passes
 - [ ] Go impact and CodeGraph bundle gate run; failures explained or waived
-- [ ] Stage diagram rendered with `make diagrams`
+- [ ] Mermaidiff, CodeGraph and PlantUML artifacts verified
 - [ ] No secrets, `.env`, database volumes or build output committed
 - [ ] Logs, metrics and traces exist for new paths
 - [ ] No unrelated changes or drive-by refactors

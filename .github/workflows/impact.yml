@@ -50,10 +50,11 @@ jobs:
         run: |
           $enforce = $env:CODEGRAPH_ENFORCE -eq 'true'
           $allowSignatures = "${{ contains(github.event.pull_request.labels.*.name, 'signature-change') }}" -eq 'true'
+          $stage = (Get-Content "docs/reviews/current-stage.txt" -Raw).Trim()
           ./scripts/pr-impact.ps1 `
             -Base "origin/${{ github.base_ref }}" `
             -Out "artifacts/pr-impact" `
-            -Stage "${{ github.event.pull_request.head.ref }}" `
+            -Stage $stage `
             -CodeGraphScripts "$env:CODEGRAPH_SCRIPTS" `
             -BlastRadius 20 `
             -AllowSignatures:$allowSignatures `
