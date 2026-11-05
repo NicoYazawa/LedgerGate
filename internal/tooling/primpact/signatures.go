@@ -18,6 +18,9 @@ func FindBreakingExports(diff string) []string {
 			continue
 		}
 		declaration := strings.Join(strings.Fields(line[1:]), " ")
+		if body := strings.Index(declaration, "{"); body >= 0 {
+			declaration = strings.TrimSpace(declaration[:body])
+		}
 		if !exportedDeclaration.MatchString(declaration) {
 			continue
 		}

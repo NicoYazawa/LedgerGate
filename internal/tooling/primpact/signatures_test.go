@@ -12,14 +12,14 @@ func TestFindBreakingExports(t *testing.T) {
 			name: "removed function",
 			diff: `@@ -1 +0,0 @@
 -func Public(value int) string {`,
-			want: []string{"func Public(value int) string {"},
+			want: []string{"func Public(value int) string"},
 		},
 		{
 			name: "changed function signature",
 			diff: `@@ -1 +1 @@
 -func Public(value int) string {
 +func Public(value string) string {`,
-			want: []string{"func Public(value int) string {"},
+			want: []string{"func Public(value int) string"},
 		},
 		{
 			name: "added function",
@@ -36,19 +36,25 @@ func TestFindBreakingExports(t *testing.T) {
 			name: "removed method",
 			diff: `@@ -1 +0,0 @@
 -func (service *Service) Public(value int) error {`,
-			want: []string{"func (service *Service) Public(value int) error {"},
+			want: []string{"func (service *Service) Public(value int) error"},
 		},
 		{
 			name: "removed exported type",
 			diff: `@@ -1 +0,0 @@
 -type Public struct {`,
-			want: []string{"type Public struct {"},
+			want: []string{"type Public struct"},
 		},
 		{
 			name: "body edit",
 			diff: `@@ -4 +4 @@
 -	return "old"
 +	return "new"`,
+		},
+		{
+			name: "one-line body edit",
+			diff: `@@ -1 +1 @@
+-func Public() int { return 1 }
++func Public() int { return 2 }`,
 		},
 	}
 
