@@ -3,6 +3,7 @@
 .env.*.local
 
 bin/
+coverage
 coverage.out
 *.log
 

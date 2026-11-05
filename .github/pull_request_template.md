@@ -87,6 +87,7 @@ Evidence:
 - [ ] `go test ./...`
 - [ ] `go test -race ./...`
 - [ ] `golangci-lint run`
+- [ ] `make coverage` passes at 90% or higher, including `cmd/*`
 - [ ] Integration tests pass
 - [ ] OpenAPI diff is additive
 - [ ] Migrations apply to a fresh PostgreSQL 18 database

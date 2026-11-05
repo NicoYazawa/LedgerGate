@@ -86,6 +86,15 @@ func TestValidateCodeGraphRejectsLocationOutsideRepo(t *testing.T) {
 	}
 }
 
+func TestFindCodeGraphScriptsUsesEnvironmentOverride(t *testing.T) {
+	scripts := installedCodeGraphScripts(t)
+	t.Setenv("CODEGRAPH_SCRIPTS", scripts)
+
+	if got := findCodeGraphScripts(t.TempDir()); got != scripts {
+		t.Errorf("findCodeGraphScripts() = %q, want %q", got, scripts)
+	}
+}
+
 func writeCodeGraphFixture(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()

@@ -1,0 +1,47 @@
+@startuml 03-coverage-gate
+title LedgerGate - Stage 03: 90% coverage gate
+
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #64748B
+
+actor "Developer / CI" as User
+
+package "GitHub Actions" #EFF6FF {
+  component "coverage.yml" as Workflow
+  component "CodeGraph validators" as Validators
+}
+
+package "Local gate" #DCFCE7 {
+  component "make coverage" as Make
+  component "cmd/coverage-gate\nthreshold + report" as Gate
+  component "internal/tooling/coverage\nweighted statement parser" as Checker
+}
+
+package "Artifacts" #FEF3C7 {
+  component "coverage.out" as Profile
+  component "artifacts/coverage.json" as JSON
+}
+
+User --> Workflow : open PR or push main
+Workflow --> Make
+Make --> Profile : go test -coverprofile
+Make --> Gate : minimum 90
+Gate --> Checker
+Checker --> Profile
+Checker --> Gate : percentage + packages
+Gate --> JSON
+Workflow --> Validators : validate CodeGraph bundle
+
+note right of Checker
+  Includes all Go statements,
+  including cmd/*.
+end note
+
+note right of Gate
+  PASS at 90% or higher.
+  FAIL below 90%.
+end note
+
+@enduml

@@ -71,6 +71,7 @@ A PR is ready for review only when all of these are true:
 - Builds, lints and passes the existing tests.
 - New behavior has tests; failure paths have tests; flag on/off has tests.
 - The completed stage has a PlantUML source, a rendered SVG, and both are committed together.
+- Total Go statement coverage, including `cmd/*`, is at least 90%.
 - `go test -race ./...` passes for code that can race.
 - Integration tests pass with real PostgreSQL, Redis and NATS via testcontainers.
 - OpenAPI changes are additive; no frozen operation is removed or renamed.
@@ -167,6 +168,15 @@ Review dimensions:
 9. Size and scope discipline.
 
 Verdict: `approve`, `request changes`, or `needs design/refactor`.
+
+## Coverage gate
+
+`make coverage` runs `go test -coverprofile coverage.out ./...` and passes the profile to `cmd/coverage-gate`.
+
+- The denominator includes every Go statement, including `cmd/*`.
+- The threshold is 90%; coverage below the threshold exits non-zero.
+- CI uploads `coverage.out` and `artifacts/coverage.json`.
+- Coverage supplements behavior tests; it does not replace failure-path review.
 
 ## High-risk handling
 
@@ -266,6 +276,7 @@ Track these per iteration:
 - `go test ./...`
 - `go test -race ./...`
 - `golangci-lint run`
+- total Go statement coverage at or above 90%
 - integration tests with testcontainers
 - OpenAPI diff against `main`
 - migration apply on a fresh PostgreSQL 18 database

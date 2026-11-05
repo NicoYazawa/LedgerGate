@@ -29,3 +29,12 @@ func TestFlagOverrideCanDisableEnabledEnvironmentFlag(t *testing.T) {
 		t.Fatal("Enabled() = true, want false from override")
 	}
 }
+
+func TestFlagOverrideCanEnableDisabledEnvironmentFlag(t *testing.T) {
+	t.Setenv("LG_FEATURE_NEW_GATEWAY", "false")
+	flags := WithOverrides(map[string]bool{"new-gateway": true})
+
+	if !flags.Enabled(context.Background(), "new-gateway") {
+		t.Fatal("Enabled() = false, want true from override")
+	}
+}
