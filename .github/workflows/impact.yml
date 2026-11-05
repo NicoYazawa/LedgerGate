@@ -1,4 +1,4 @@
-name: Impact gate
+name: CodeGraph impact gate
 
 on:
   pull_request:
@@ -30,17 +30,18 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install codegraph
-        run: npm install -g @optave/codegraph@3.17.0
-
-      - name: Cache codegraph graph
-        if: ${{ hashFiles('**/*.go') != '' }}
-        uses: actions/cache@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
-          path: .codegraph
-          key: codegraph-${{ runner.os }}-${{ hashFiles('go.sum', 'go.mod') }}-${{ github.sha }}
-          restore-keys: |
-            codegraph-${{ runner.os }}-${{ hashFiles('go.sum', 'go.mod') }}-
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install CodeGraph validators
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/codegraph-tool" \
+            --no-save --ignore-scripts @longbowzz/dsh-codegraph@0.4.0
+          echo "CODEGRAPH_SCRIPTS=$RUNNER_TEMP/codegraph-tool/node_modules/@longbowzz/dsh-codegraph/skills/codegraph/scripts" >> "$GITHUB_ENV"
 
       - name: Build impact artifacts and run gate
         shell: pwsh
@@ -52,6 +53,8 @@ jobs:
           ./scripts/pr-impact.ps1 `
             -Base "origin/${{ github.base_ref }}" `
             -Out "artifacts/pr-impact" `
+            -Stage "${{ github.event.pull_request.head.ref }}" `
+            -CodeGraphScripts "$env:CODEGRAPH_SCRIPTS" `
             -BlastRadius 20 `
             -AllowSignatures:$allowSignatures `
             -Enforce:$enforce
