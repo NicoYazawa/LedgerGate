@@ -1,0 +1,53 @@
+name: Coverage gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install CodeGraph validators
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/codegraph-tool" \
+            --no-save --ignore-scripts @longbowzz/dsh-codegraph@0.4.0
+          echo "CODEGRAPH_SCRIPTS=$RUNNER_TEMP/codegraph-tool/node_modules/@longbowzz/dsh-codegraph/skills/codegraph/scripts" >> "$GITHUB_ENV"
+
+      - name: Run coverage gate
+        shell: pwsh
+        run: make coverage COVERAGE_MIN=90
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage.out
+            artifacts/coverage.json
+          if-no-files-found: warn

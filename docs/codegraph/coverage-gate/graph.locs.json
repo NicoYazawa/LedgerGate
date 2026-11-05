@@ -1,0 +1,21 @@
+{
+  "sequence": {
+    "actors": {
+      "Workflow": [".github/workflows/coverage.yml", 43, "added"],
+      "Make": ["Makefile", 13, "added"],
+      "Gate": ["cmd/coverage-gate/main.go", 18, "added"],
+      "Checker": ["internal/tooling/coverage/coverage.go", 30, "added"]
+    },
+    "messages": [
+      [".github/workflows/coverage.yml", 43, "added"],
+      ["Makefile", 15, "added"],
+      ["cmd/coverage-gate/main.go", 24, "added"],
+      ["cmd/coverage-gate/main.go", 37, "added"],
+      ["internal/tooling/coverage/coverage.go", 41, "added"],
+      ["internal/tooling/coverage/coverage.go", 95, "added"],
+      ["cmd/coverage-gate/main.go", 43, "added"],
+      ["cmd/coverage-gate/main.go", 64, "added"],
+      ["Makefile", 15, "added"]
+    ]
+  }
+}

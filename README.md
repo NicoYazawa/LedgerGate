@@ -38,6 +38,7 @@ Follow [`docs/pr-workflow.md`](docs/pr-workflow.md). In short:
 - Risk-based size budgets; run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-size.ps1` before opening a PR.
 - Every PR must build, test, pass independent review, and have a rollback plan.
 - Every completed stage includes a versioned PlantUML source and rendered SVG under `docs/diagrams/stages/`; run `make diagrams`.
+- Total Go statement coverage, including `cmd/*`, must be at least 90%; run `make coverage`.
 - Incomplete user-visible behavior is behind a default-off feature flag.
 - Reviewer and fixer prompts live in [`docs/prompts/`](docs/prompts/).
 - The Go impact gate and committed CodeGraph review bundle are described in [`docs/pr-workflow.md`](docs/pr-workflow.md). Run `scripts/pr-impact.ps1` before review when code changes.

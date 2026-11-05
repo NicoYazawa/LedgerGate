@@ -1,0 +1,16 @@
+sequenceDiagram
+  autonumber
+  participant Workflow as GitHub Actions
+  participant Make as Makefile
+  participant Gate as coverage-gate
+  participant Checker as Coverage checker
+
+  Workflow->>Make: 执行 coverage 目标
+  Make->>Gate: 传入 profile 与最低阈值
+  Gate->>Gate: 解析参数并打开覆盖率文件
+  Gate->>Checker: 请求计算总覆盖率
+  Checker->>Checker: 按 Go package 累计语句
+  Checker-->>Gate: 返回百分比与通过状态
+  Gate->>Gate: 输出分包报告与 JSON
+  Gate-->>Make: 返回 0 或 1
+  Make-->>Workflow: 上传 coverage artifacts

@@ -142,6 +142,73 @@ func TestLoadUsesTenSecondShutdownDefault(t *testing.T) {
 	}
 }
 
+func TestLoadRejectsInvalidEnvironmentValues(t *testing.T) {
+	tests := []struct {
+		name      string
+		key       string
+		value     string
+		wantError string
+	}{
+		{name: "environment", key: "LG_ENV", value: "staging", wantError: "LG_ENV"},
+		{name: "http address", key: "LG_HTTP_ADDR", value: "localhost", wantError: "LG_HTTP_ADDR"},
+		{name: "shutdown timeout", key: "LG_HTTP_SHUTDOWN_TIMEOUT", value: "-1s", wantError: "LG_HTTP_SHUTDOWN_TIMEOUT"},
+		{name: "database URL", key: "LG_DATABASE_URL", value: "not-a-url", wantError: "LG_DATABASE_URL"},
+		{name: "redis URL", key: "LG_REDIS_URL", value: "not-a-url", wantError: "LG_REDIS_URL"},
+		{name: "nats URL", key: "LG_NATS_URL", value: "not-a-url", wantError: "LG_NATS_URL"},
+		{name: "otel endpoint", key: "LG_OTLP_ENDPOINT", value: "bad", wantError: "LG_OTLP_ENDPOINT"},
+		{name: "log level", key: "LG_LOG_LEVEL", value: "verbose", wantError: "LG_LOG_LEVEL"},
+		{name: "service tokens", key: "LG_SERVICE_TOKENS", value: `{"gateway":" "}`, wantError: "LG_SERVICE_TOKENS"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setGatewayEnvironment(t)
+			t.Setenv(test.key, test.value)
+
+			_, err := Load("gateway")
+
+			if err == nil || !strings.Contains(err.Error(), test.wantError) {
+				t.Errorf("Load() error = %q, want %s", err, test.wantError)
+			}
+		})
+	}
+}
+
+func TestLoadRejectsMalformedServiceTokens(t *testing.T) {
+	setGatewayEnvironment(t)
+	t.Setenv("LG_SERVICE_TOKENS", "{")
+
+	_, err := Load("gateway")
+
+	if err == nil || !strings.Contains(err.Error(), "LG_SERVICE_TOKENS") {
+		t.Errorf("Load() error = %q, want malformed tokens error", err)
+	}
+}
+
+func TestLoadRejectsUnreadableConfigFile(t *testing.T) {
+	setGatewayEnvironment(t)
+	t.Setenv("LG_CONFIG_FILE", filepath.Join(t.TempDir(), "missing.yaml"))
+
+	_, err := Load("gateway")
+
+	if err == nil || !strings.Contains(err.Error(), "missing.yaml") {
+		t.Errorf("Load() error = %q, want config path", err)
+	}
+}
+
+func TestLoadAcceptsURLOTLPEndpoint(t *testing.T) {
+	setGatewayEnvironment(t)
+	t.Setenv("LG_OTLP_ENDPOINT", "http://jaeger:4317")
+
+	cfg, err := Load("gateway")
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.OTLPEndpoint != "http://jaeger:4317" {
+		t.Errorf("OTLPEndpoint = %q", cfg.OTLPEndpoint)
+	}
+}
+
 func setGatewayEnvironment(t *testing.T) {
 	t.Helper()
 	values := map[string]string{

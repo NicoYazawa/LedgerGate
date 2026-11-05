@@ -106,3 +106,19 @@ func TestContextFallbacksReturnEmptyStrings(t *testing.T) {
 		t.Errorf("TraceIDFromContext() = %q, want empty", got)
 	}
 }
+
+func TestStatusWriterRecordsImplicitOKOnWrite(t *testing.T) {
+	writer := &statusWriter{ResponseWriter: httptest.NewRecorder(), status: http.StatusOK}
+
+	written, err := writer.Write([]byte("ok"))
+
+	if err != nil {
+		t.Fatalf("Write() error = %v", err)
+	}
+	if written != 2 {
+		t.Errorf("Write() = %d, want 2", written)
+	}
+	if !writer.wroteHeader || writer.status != http.StatusOK {
+		t.Errorf("writer state = %+v, want implicit 200", writer)
+	}
+}
