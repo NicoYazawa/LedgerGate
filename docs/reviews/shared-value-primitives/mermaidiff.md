@@ -26,7 +26,7 @@ sequenceDiagram
   end
 ```
 
-- 1-3 · `internal/platform/money/money.go:22,80,94` · `internal/platform/ids/ids.go:12,16` · `internal/platform/clock/clock.go:27,37`
+- 1-3 · `internal/platform/money/money.go:17,39,49` · `internal/platform/ids/ids.go:12,16` · `internal/platform/clock/clock.go:27,37`
 - 4-6 · `internal/platform/crypt/aesgcm.go:21,36,44` · AES-256-GCM rejects tampering
 - 7-9 · `internal/testkit/postgres.go:23,63` · `internal/testkit/redis.go:21,46` · `internal/testkit/nats.go:21,47`
 

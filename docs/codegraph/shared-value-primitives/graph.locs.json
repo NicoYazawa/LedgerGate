@@ -1,7 +1,7 @@
 {
   "flowchart": {
     "nodes": {
-      "Money": ["internal/platform/money/money.go", 22, "added"],
+      "Money": ["internal/platform/money/money.go", 17, "added"],
       "IDs": ["internal/platform/ids/ids.go", 12, "added"],
       "Clock": ["internal/platform/clock/clock.go", 27, "added"],
       "Crypt": ["internal/platform/crypt/aesgcm.go", 21, "added"],
