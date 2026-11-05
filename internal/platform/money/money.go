@@ -1,7 +1,6 @@
 package money
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -11,12 +10,6 @@ import (
 
 const MicroPerUSD MicroUSD = 1_000_000
 
-const (
-	Max MicroUSD = math.MaxInt64
-	Min MicroUSD = math.MinInt64
-)
-
-var ErrOverflow = errors.New("micro-USD overflow")
 var decimalPattern = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$`)
 
 type MicroUSD int64
@@ -38,7 +31,7 @@ func Parse(value string) (MicroUSD, error) {
 		}
 	}
 	if !amount.IsInt64() {
-		return 0, fmt.Errorf("parse micro-USD %q: %w", value, ErrOverflow)
+		return 0, fmt.Errorf("parse micro-USD %q: overflow", value)
 	}
 	return MicroUSD(amount.Int64()), nil
 }
@@ -54,15 +47,15 @@ func (amount MicroUSD) String() string {
 }
 
 func (amount MicroUSD) Add(other MicroUSD) (MicroUSD, error) {
-	if (other > 0 && amount > Max-other) || (other < 0 && amount < Min-other) {
-		return 0, ErrOverflow
+	if (other > 0 && amount > MicroUSD(math.MaxInt64)-other) || (other < 0 && amount < MicroUSD(math.MinInt64)-other) {
+		return 0, fmt.Errorf("micro-USD overflow")
 	}
 	return amount + other, nil
 }
 
 func (amount MicroUSD) Sub(other MicroUSD) (MicroUSD, error) {
-	if (other > 0 && amount < Min+other) || (other < 0 && amount > Max+other) {
-		return 0, ErrOverflow
+	if (other > 0 && amount < MicroUSD(math.MinInt64)+other) || (other < 0 && amount > MicroUSD(math.MaxInt64)+other) {
+		return 0, fmt.Errorf("micro-USD overflow")
 	}
 	return amount - other, nil
 }
@@ -70,7 +63,7 @@ func (amount MicroUSD) Sub(other MicroUSD) (MicroUSD, error) {
 func (amount MicroUSD) Mul(multiplier int64) (MicroUSD, error) {
 	product := new(big.Int).Mul(big.NewInt(int64(amount)), big.NewInt(multiplier))
 	if !product.IsInt64() {
-		return 0, ErrOverflow
+		return 0, fmt.Errorf("micro-USD overflow")
 	}
 	return MicroUSD(product.Int64()), nil
 }

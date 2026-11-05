@@ -116,7 +116,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-impact.ps1 `
   -Stage <stage-slug>
 ```
 
-The stage defaults to the current branch name with its `feat/`, `fix/`, `refactor/` or `docs/` prefix removed. Pass `-Stage` explicitly in CI. The script compares committed changes only; commit before running it.
+The stage defaults to the branch name outside CI. CI reads `docs/reviews/current-stage.txt`, so the long-lived `w1` branch validates the latest completed stage. The script compares committed changes only.
 
 Policy:
 
