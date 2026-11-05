@@ -32,17 +32,18 @@ The reviewer and the fixer must be different sessions. The reviewer does not app
 1. Take one ticket from `to-tickets`.
 2. Create a short-lived branch: `feat/<ticket>`, `fix/<ticket>`, or `refactor/<ticket>`.
 3. Implement test-first where practical. Add a failing test for the behavior or bug.
-4. Run the local gate and `scripts/pr-size.ps1`.
-5. Open a PR with the template in `.github/pull_request_template.md`.
-6. CI runs. Do not request review while CI is red.
-7. An independent reviewer runs the review prompt in `docs/prompts/pr-reviewer.md`.
-8. Blocker/high findings: add a regression test and a minimal fix, then re-review.
-9. Merge with squash after CI and review pass.
-10. Delete the branch. Remove feature flags in a follow-up PR once the behavior is stable.
+4. At stage completion, add the stage PlantUML source and rendered SVG under `docs/diagrams/stages/`.
+5. Run the local gate and `scripts/pr-size.ps1`.
+6. Open a PR with the template in `.github/pull_request_template.md`.
+7. CI runs. Do not request review while CI is red.
+8. An independent reviewer runs the review prompt in `docs/prompts/pr-reviewer.md`.
+9. Blocker/high findings: add a regression test and a minimal fix, then re-review.
+10. Merge with squash after CI and review pass.
+11. Delete the branch. Remove feature flags in a follow-up PR once the behavior is stable.
 
 ## Risk tiers and size budgets
 
-Count **hand-written production churn** (added + deleted lines). Exclude tests, generated code, vendor, lockfiles and build output. The script `scripts/pr-size.ps1` enforces this.
+Count **hand-written production churn** (added + deleted lines). Exclude tests, generated code, vendor, lockfiles, build output, CodeGraph `graph.html` and rendered diagram SVGs. The script `scripts/pr-size.ps1` enforces this.
 
 | Tier | Paths | Soft limit | Hard limit |
 |---|---|---|---|
@@ -69,6 +70,7 @@ A PR is ready for review only when all of these are true:
 
 - Builds, lints and passes the existing tests.
 - New behavior has tests; failure paths have tests; flag on/off has tests.
+- The completed stage has a PlantUML source, a rendered SVG, and both are committed together.
 - `go test -race ./...` passes for code that can race.
 - Integration tests pass with real PostgreSQL, Redis and NATS via testcontainers.
 - OpenAPI changes are additive; no frozen operation is removed or renamed.
@@ -80,38 +82,57 @@ A PR is ready for review only when all of these are true:
 - `scripts/pr-size.ps1` passes or the `size:large` label is present with justification.
 - No secrets, `.env` files, database volumes, or build output are committed.
 
-## Impact diagrams and codegraph gate
+## Stage diagrams
 
-When a PR changes code files, `scripts/pr-impact.ps1` runs `codegraph` and writes artifacts to `artifacts/pr-impact/`:
+Every completed implementation stage or ticket produces a durable PlantUML record:
+
+- Source: `docs/diagrams/stages/NN-<ticket-slug>.puml`
+- Render: `docs/diagrams/stages/NN-<ticket-slug>.svg`
+- The `@startuml` identifier must match the filename without `.puml`, because the PlantUML CLI uses it as the output name.
+- Commit the source and SVG in the same PR as the completed stage.
+- Render all diagram sources with `make diagrams`. To render selected files, run `scripts/render-plantuml.ps1 -Source <path>`.
+
+The diagram records the implemented boundary, runtime dependencies, planned work and known gaps at stage completion. Keep it focused on the stage; do not duplicate the full target architecture in every diagram.
+
+Completed stages that change code also commit a CodeGraph review bundle:
+
+- `docs/codegraph/<stage>/graph.mmd`
+- `docs/codegraph/<stage>/graph.locs.json`
+- `docs/codegraph/<stage>/graph.html`
+
+The agent reads the code and supplies the semantic topology and source locations. CI validates the bundle; it does not invent topology automatically. The generated HTML is self-contained and supports click-to-source.
+
+## Impact gate
+
+When a PR changes code files, `scripts/pr-impact.ps1` runs the Go command at `cmd/pr-impact` and writes transient artifacts to the gitignored `artifacts/pr-impact/` directory:
 
 | Artifact | Source | Purpose |
 |---|---|---|
-| `structure.mmd` | `codegraph branch-compare <base> HEAD --format mermaid` | Added / changed / removed symbols |
-| `impact.mmd` | `codegraph diff-impact <base> --format mermaid` | Affected callers and readers |
-| `check.json` | `codegraph check <base> --cycles --signatures --blast-radius 20 --boundaries -j` | Gate predicates |
-| `rules.txt` | `codegraph check --rules` | Manifesto rule table |
-| `summary.md` | generated | Sticky PR comment body |
+| `impact.mmd` | `AnalyzePackages` over `go list` | Changed packages and transitive reverse dependents |
+| `check.json` | Go impact runner | Predicates, counts and CodeGraph validation result |
+| `summary.md` | Go impact runner | Sticky PR comment body |
 
 Run locally:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-impact.ps1 -Base origin/main
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-impact.ps1 `
+  -Base origin/main `
+  -Stage <stage-slug>
 ```
 
-The script compares committed changes only. Commit your branch before running it; untracked files are not counted.
+The stage defaults to the current branch name with its `feat/`, `fix/`, `refactor/` or `docs/` prefix removed. Pass `-Stage` explicitly in CI. The script compares committed changes only; commit before running it.
 
 Policy:
 
 - CI starts **advisory**. Set the repository variable `CODEGRAPH_ENFORCE=true` to make the gate required.
-- Hard gate: dependency cycles, blast radius above the configured threshold, exported signature changes without a `signature-change` waiver.
+- Hard gate: invalid Go package graph, blast radius above the configured threshold, exported declaration changes without a `signature-change` waiver, or a missing/invalid CodeGraph bundle.
 - To waive the signature predicate, add the `signature-change` label to the PR and justify it in the PR body. The reviewer must still approve the change.
-- Manifesto rules are advisory until the thresholds are tuned for this repo.
-- `--boundaries` requires a CODEOWNERS file; it is skipped when none exists.
-- Pin `@optave/codegraph@3.17.0`. CI uses `fetch-depth: 0` and caches the `.codegraph/` graph.
+- Go compilation rejects import cycles; the package graph additionally reports reverse-dependency blast radius.
+- CI pins `@longbowzz/dsh-codegraph@0.4.0` only for `validate.mjs` and `verify-html.mjs`.
 - Docs-only PRs skip the gate; the risk tiers and review still apply.
-- A green gate does not replace tests or review. codegraph sees code dependencies, not money invariants, SQL semantics, OpenAPI compatibility or runtime behavior.
+- A green gate does not replace tests or review. It validates package relationships, declaration lines and graph source locations; it cannot prove money invariants, SQL semantics, OpenAPI compatibility or runtime behavior.
 
-`mermaidiff` is a **reviewer aid**, not a gate. It produces a semantic flow brief with payload changes and open questions. Do not make it a required check. Version note: mermaidiff 0.1.5 calls `codegraph callers/callees`, which codegraph 3.17.0 does not expose; use it for the semantic brief and run codegraph separately until the versions align.
+`mermaidiff` is an optional **reviewer aid**, not part of the gate. It produces a semantic flow brief and stores ignored output under `.mermaidiff/`.
 
 ## Review
 
@@ -227,7 +248,7 @@ Track these per iteration:
 ## Tooling
 
 - `scripts/pr-size.ps1` — risk-tier size check.
-- `scripts/pr-impact.ps1` — codegraph structure/impact artifacts and gate.
+- `scripts/pr-impact.ps1` — Go package impact, export guard and CodeGraph bundle gate.
 - `scripts/post-impact-comment.ps1` — sticky PR comment for the impact summary.
 - `.github/workflows/impact.yml` — PR impact job.
 - `.github/pull_request_template.md` — PR contract.

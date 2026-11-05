@@ -68,10 +68,11 @@ Evidence:
 ## Impact diagrams
 
 - [ ] `artifacts/pr-impact/summary.md` reviewed
-- [ ] Structure diff attached to the PR
-- [ ] Impact graph attached to the PR
-- [ ] codegraph gate passed, or advisory failures explained
+- [ ] Go package impact graph reviewed
+- [ ] `check.json` predicates passed, or advisory failures explained
+- [ ] CodeGraph bundle committed under `docs/codegraph/<stage>/`
 - [ ] `mermaidiff` brief reviewed (optional, reviewer aid only)
+- [ ] Stage PlantUML source and rendered SVG committed under `docs/diagrams/stages/`
 
 ## Rollback
 
@@ -90,7 +91,8 @@ Evidence:
 - [ ] OpenAPI diff is additive
 - [ ] Migrations apply to a fresh PostgreSQL 18 database
 - [ ] `scripts/pr-size.ps1` passes
-- [ ] codegraph impact gate run; failures explained or waived
+- [ ] Go impact and CodeGraph bundle gate run; failures explained or waived
+- [ ] Stage diagram rendered with `make diagrams`
 - [ ] No secrets, `.env`, database volumes or build output committed
 - [ ] Logs, metrics and traces exist for new paths
 - [ ] No unrelated changes or drive-by refactors

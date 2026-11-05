@@ -116,9 +116,9 @@
 
 **Files:**
 
-- Create: `docs/codegraph/01-buildable-gateway-health/graph.mmd`
-- Create: `docs/codegraph/01-buildable-gateway-health/graph.locs.json`
-- Create: `docs/codegraph/01-buildable-gateway-health/graph.html`
+- Create: `docs/codegraph/codegraph-gate/graph.mmd`
+- Create: `docs/codegraph/codegraph-gate/graph.locs.json`
+- Create: `docs/codegraph/codegraph-gate/graph.html`
 - Create: `docs/diagrams/stages/02-codegraph-gate.puml`
 - Create: `docs/diagrams/stages/02-codegraph-gate.svg`
 

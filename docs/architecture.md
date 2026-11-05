@@ -18,8 +18,10 @@ PlantUML sources live in `docs/diagrams/`:
 | Money path | [`diagrams/money-path.puml`](diagrams/money-path.puml) |
 | Top-up / refund / FX | [`diagrams/topup-refund.puml`](diagrams/topup-refund.puml) |
 | Local deployment | [`diagrams/deployment.puml`](diagrams/deployment.puml) |
+| W1 stage 01 | [source](diagrams/stages/01-buildable-gateway-health.puml) / [rendered SVG](diagrams/stages/01-buildable-gateway-health.svg) |
+| CodeGraph gate | [source](diagrams/stages/02-codegraph-gate.puml) / [rendered SVG](diagrams/stages/02-codegraph-gate.svg) / [interactive review](codegraph/codegraph-gate/graph.html) |
 
-Rendering note: this machine has Graphviz but no Java or PlantUML CLI. Use the VS Code PlantUML extension, IntelliJ's PlantUML integration, or install Java + PlantUML. A GitHub Actions job can render the `.puml` files to SVG on push if the README should show images.
+Rendering note: run `make diagrams` to render every PlantUML source to SVG. The script uses a `plantuml` command or an installed `plantuml-cli` through `npx`; it discovers Java from `JAVA_HOME` or the Windows JDK/JRE registry when `java` is not on `PATH`.
 
 ## 2. Service catalog
 
