@@ -4,12 +4,14 @@ POWERSHELL ?= powershell
 COVERAGE_MIN ?= 90
 EXEEXT := $(if $(filter windows,$(shell $(GO) env GOOS)),.exe,)
 
-.PHONY: build test coverage lint fmt diagrams
+.PHONY: build test test-integration coverage lint fmt diagrams
 build:
 	mkdir -p bin
 	$(GO) build -o bin/gateway$(EXEEXT) ./cmd/gateway
 test:
 	$(GO) test ./...
+test-integration:
+	$(GO) test -tags=integration ./internal/testkit -count=1
 coverage:
 	$(GO) test -coverprofile coverage.out ./...
 	$(GO) run ./cmd/coverage-gate -profile coverage.out -minimum $(COVERAGE_MIN) -json artifacts/coverage.json

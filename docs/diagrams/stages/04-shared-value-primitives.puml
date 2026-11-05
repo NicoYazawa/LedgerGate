@@ -1,0 +1,41 @@
+@startuml 04-shared-value-primitives
+title LedgerGate - Stage 04: shared value primitives
+
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #64748B
+
+package "internal/platform" #DCFCE7 {
+  component "money\nMicroUSD · Parse · String\nAdd · Sub · Mul" as Money
+  component "ids\nUUIDv7 · prefixed IDs" as IDs
+  component "clock\nSystem · Fake · Advance" as Clock
+  component "crypt\nAES-256-GCM\nnonce + ciphertext" as Crypt
+}
+
+package "internal/testkit" #FEF3C7 {
+  component "PostgreSQL 18\nstart + Close" as Postgres
+  component "Redis 7.4\nstart + Close" as Redis
+  component "NATS 2.10 JetStream\nstart + Close" as NATS
+}
+
+node "Future ledger, billing,\npayment and gateway flows" as Future
+
+Future --> Money : exact USD amounts
+Future --> IDs : time-ordered IDs
+Future --> Clock : deterministic time
+Future --> Crypt : provider credential encryption
+Future --> Postgres : integration tests
+Future --> Redis : integration tests
+Future --> NATS : integration tests
+
+note bottom of Money
+  Integer micro-USD only.
+  Parse rounds the seventh decimal away from zero.
+end note
+
+note bottom of Crypt
+  Wrong keys, tampered data and truncated ciphertext fail closed.
+end note
+
+@enduml
