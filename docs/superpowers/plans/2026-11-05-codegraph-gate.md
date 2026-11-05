@@ -10,6 +10,8 @@
 
 **Spec:** The approved replacement plan in the Work thread dated 2026-11-05.
 
+**Status:** Implemented and verified across the stacked refactor branches.
+
 ## Global Constraints
 
 - No invocation or installation of `@optave/codegraph` remains.
