@@ -37,7 +37,7 @@ Follow [`docs/pr-workflow.md`](docs/pr-workflow.md). In short:
 - One ticket, one small vertical-slice PR.
 - Risk-based size budgets; run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-size.ps1` before opening a PR.
 - Every PR must build, test, pass independent review, and have a rollback plan.
-- Every completed stage includes a versioned PlantUML source and rendered SVG under `docs/diagrams/stages/`; run `make diagrams`.
+- Every completed stage commits Mermaidiff, CodeGraph and PlantUML review artifacts; verify them with `make verify-artifacts STAGE=<slug>`.
 - Total Go statement coverage, including `cmd/*`, must be at least 90%; run `make coverage`.
 - Incomplete user-visible behavior is behind a default-off feature flag.
 - Reviewer and fixer prompts live in [`docs/prompts/`](docs/prompts/).

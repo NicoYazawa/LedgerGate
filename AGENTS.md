@@ -15,7 +15,7 @@ Single-context: `GLOSSARY.md` at the repo root and ADRs under `docs/adr/`. See `
 ## Development workflow
 
 - Follow `docs/pr-workflow.md` for every change.
-- Stage diagrams: at the end of every completed implementation stage or ticket, add `docs/diagrams/stages/NN-<slug>.puml`, render its `.svg`, and commit both with the stage.
+- Stage diagrams: every completed implementation stage requires committed Mermaidiff, CodeGraph and PlantUML artifacts; run `make verify-artifacts STAGE=<slug>` before declaring the stage complete.
 - Impact gate: `scripts/pr-impact.ps1` combines Go reverse-dependency and exported-declaration checks with committed CodeGraph artifacts under `docs/codegraph/<stage>/`.
 - Coverage gate: total Go statement coverage includes `cmd/*`; `make coverage` enforces at least 90%.
 - W1 scope and interfaces: `docs/w1-foundation.md`.

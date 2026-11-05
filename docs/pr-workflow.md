@@ -83,25 +83,20 @@ A PR is ready for review only when all of these are true:
 - `scripts/pr-size.ps1` passes or the `size:large` label is present with justification.
 - No secrets, `.env` files, database volumes, or build output are committed.
 
-## Stage diagrams
+## Stage review artifacts
 
-Every completed implementation stage or ticket produces a durable PlantUML record:
+Every completed implementation stage commits all three review artifacts:
 
-- Source: `docs/diagrams/stages/NN-<ticket-slug>.puml`
-- Render: `docs/diagrams/stages/NN-<ticket-slug>.svg`
-- The `@startuml` identifier must match the filename without `.puml`, because the PlantUML CLI uses it as the output name.
-- Commit the source and SVG in the same PR as the completed stage.
-- Render all diagram sources with `make diagrams`. To render selected files, run `scripts/render-plantuml.ps1 -Source <path>`.
+- Mermaidiff flow brief and HTML: `docs/reviews/<stage>/mermaidiff.md` and `mermaidiff.html`
+- CodeGraph bundle: `docs/codegraph/<stage>/graph.mmd`, `graph.locs.json`, `graph.html`
+- PlantUML source and render: `docs/diagrams/stages/NN-<stage>.puml` and `.svg`
+- Artifact index: `docs/reviews/<stage>/README.md`
 
-The diagram records the implemented boundary, runtime dependencies, planned work and known gaps at stage completion. Keep it focused on the stage; do not duplicate the full target architecture in every diagram.
+Run `make verify-artifacts STAGE=<stage>` before declaring the stage complete. The check fails if any source, render or index file is missing.
 
-Completed stages that change code also commit a CodeGraph review bundle:
+Mermaidiff records the before/after flow and impact. CodeGraph records clickable source-mapped topology. PlantUML records the stable architecture summary. Keep each diagram focused on the stage rather than duplicating the full target architecture.
 
-- `docs/codegraph/<stage>/graph.mmd`
-- `docs/codegraph/<stage>/graph.locs.json`
-- `docs/codegraph/<stage>/graph.html`
-
-The agent reads the code and supplies the semantic topology and source locations. CI validates the bundle; it does not invent topology automatically. The generated HTML is self-contained and supports click-to-source.
+For PlantUML, the `@startuml` identifier must match the filename without `.puml`. Render all sources with `make diagrams`, or use `scripts/render-plantuml.ps1 -Source <path>`.
 
 ## Impact gate
 
