@@ -1,0 +1,55 @@
+@startuml 02-codegraph-gate
+title LedgerGate - Stage 02: CodeGraph impact gate
+
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #64748B
+
+actor "Developer / CI" as User
+
+package "GitHub Actions" #EFF6FF {
+  component "setup Go" as Go
+  component "CodeGraph validator\n@longbowzz/dsh-codegraph@0.4.0" as Validator
+  component "scripts/pr-impact.ps1" as Script
+}
+
+package "Go impact tool" #DCFCE7 {
+  component "cmd/pr-impact\nCLI flags" as CLI
+  component "Run\nchange discovery + report" as Runner
+  component "AnalyzePackages\ngo list + reverse dependencies" as Packages
+  component "FindBreakingExports\nexported declaration guard" as Signatures
+  component "ValidateCodeGraph\nMermaid + locations + HTML" as Bundle
+}
+
+package "Committed artifacts" #FEF3C7 {
+  component "docs/codegraph/<stage>/graph.mmd" as MMD
+  component "docs/codegraph/<stage>/graph.locs.json" as Locations
+  component "docs/codegraph/<stage>/graph.html" as HTML
+  component "artifacts/pr-impact\nsummary + impact + check" as Report
+}
+
+User --> Script : run locally or in CI
+Script --> CLI
+CLI --> Runner
+Runner --> Packages : Go changes
+Runner --> Signatures : exported declarations
+Runner --> Bundle : code changes
+Bundle --> Validator
+Validator --> MMD
+Validator --> Locations
+Validator --> HTML
+Runner --> Report
+Go ..> Runner : toolchain
+
+note right of Packages
+  Blast radius counts transitive reverse dependencies.
+  Go compilation rejects import cycles.
+end note
+
+note right of Bundle
+  CI validates committed artifacts.
+  The agent generates semantic topology from source.
+end note
+
+@enduml
