@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"regexp"
 	"strings"
 )
 
@@ -16,60 +17,25 @@ const (
 )
 
 var ErrOverflow = errors.New("micro-USD overflow")
+var decimalPattern = regexp.MustCompile(`^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$`)
 
 type MicroUSD int64
 
 func Parse(value string) (MicroUSD, error) {
 	value = strings.TrimSpace(value)
-	if value == "" {
-		return 0, fmt.Errorf("parse micro-USD: empty amount")
-	}
-
-	negative := false
-	switch value[0] {
-	case '-':
-		negative = true
-		value = value[1:]
-	case '+':
-		value = value[1:]
-	}
-	if value == "" || strings.Count(value, ".") > 1 {
+	if !decimalPattern.MatchString(value) {
 		return 0, fmt.Errorf("parse micro-USD %q: invalid decimal", value)
 	}
-
-	parts := strings.SplitN(value, ".", 2)
-	integerPart := parts[0]
-	fraction := ""
-	if len(parts) == 2 {
-		fraction = parts[1]
-	}
-	if integerPart == "" && fraction == "" {
-		return 0, fmt.Errorf("parse micro-USD %q: invalid decimal", value)
-	}
-	for _, part := range []string{integerPart, fraction} {
-		for _, character := range part {
-			if character < '0' || character > '9' {
-				return 0, fmt.Errorf("parse micro-USD %q: invalid digit", value)
-			}
+	rational, _ := new(big.Rat).SetString(value)
+	rational.Mul(rational, big.NewRat(int64(MicroPerUSD), 1))
+	amount, remainder := new(big.Int), new(big.Int)
+	amount.QuoRem(rational.Num(), rational.Denom(), remainder)
+	if new(big.Int).Lsh(new(big.Int).Abs(remainder), 1).Cmp(rational.Denom()) >= 0 {
+		if rational.Sign() < 0 {
+			amount.Sub(amount, big.NewInt(1))
+		} else {
+			amount.Add(amount, big.NewInt(1))
 		}
-	}
-
-	if integerPart == "" {
-		integerPart = "0"
-	}
-	paddedFraction := fraction
-	if len(paddedFraction) < 6 {
-		paddedFraction += strings.Repeat("0", 6-len(paddedFraction))
-	}
-	fractionMicros := paddedFraction[:6]
-
-	amount := new(big.Int)
-	amount.SetString(integerPart+fractionMicros, 10)
-	if len(fraction) > 6 && fraction[6] >= '5' {
-		amount.Add(amount, big.NewInt(1))
-	}
-	if negative {
-		amount.Neg(amount)
 	}
 	if !amount.IsInt64() {
 		return 0, fmt.Errorf("parse micro-USD %q: %w", value, ErrOverflow)
@@ -78,17 +44,13 @@ func Parse(value string) (MicroUSD, error) {
 }
 
 func (amount MicroUSD) String() string {
-	integer := new(big.Int).SetInt64(int64(amount))
 	sign := ""
-	if integer.Sign() < 0 {
+	magnitude := uint64(amount)
+	if amount < 0 {
 		sign = "-"
-		integer.Abs(integer)
+		magnitude = uint64(-(amount + 1)) + 1
 	}
-	divisor := big.NewInt(int64(MicroPerUSD))
-	whole := new(big.Int)
-	fraction := new(big.Int)
-	whole.QuoRem(integer, divisor, fraction)
-	return fmt.Sprintf("%s%s.%06s", sign, whole.String(), fraction.String())
+	return fmt.Sprintf("%s%d.%06d", sign, magnitude/uint64(MicroPerUSD), magnitude%uint64(MicroPerUSD))
 }
 
 func (amount MicroUSD) Add(other MicroUSD) (MicroUSD, error) {

@@ -28,14 +28,4 @@ Future --> Crypt : provider credential encryption
 Future --> Postgres : integration tests
 Future --> Redis : integration tests
 Future --> NATS : integration tests
-
-note bottom of Money
-  Integer micro-USD only.
-  Parse rounds the seventh decimal away from zero.
-end note
-
-note bottom of Crypt
-  Wrong keys, tampered data and truncated ciphertext fail closed.
-end note
-
 @enduml
