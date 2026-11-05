@@ -31,7 +31,7 @@ if ($body.Length -gt 60000) {
     $body = $body.Substring(0, 60000) + "`n`n_Comment truncated; download the `pr-impact` artifact for the full diagram._"
 }
 
-$tempPath = Join-Path $env:TEMP "ledgergate-impact-comment.md"
+$tempPath = Join-Path ([System.IO.Path]::GetTempPath()) "ledgergate-impact-comment.md"
 Write-Utf8NoBom $tempPath $body
 $tempPathForGh = $tempPath -replace '\\', '/'
 
