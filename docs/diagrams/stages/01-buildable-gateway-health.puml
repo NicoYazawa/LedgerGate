@@ -1,0 +1,90 @@
+@startuml 01-buildable-gateway-health
+title LedgerGate - Stage 01: buildable gateway health foundation
+
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #64748B
+skinparam NoteBackgroundColor #FFFFFF
+skinparam NoteBorderColor #94A3B8
+
+legend right
+  <back:#DCFCE7>Implemented</back> current ticket 01 checkout
+  <back:#FEF3C7>Planned</back> later W1 tickets
+endlegend
+
+actor "Developer / Operator" as Operator
+
+package "Configuration inputs" #F8FAFC {
+  component "Environment variables\nLG_*" as ENV #DCFCE7
+  component "Optional strict YAML\nLG_CONFIG_FILE" as YAML #DCFCE7
+}
+
+node "Gateway process :8080" as Gateway #DCFCE7 {
+  component "cmd/gateway\nserve entrypoint" as Main #DCFCE7
+
+  package "internal/platform" {
+    component "config\nLoad + fail-fast validation" as Config #DCFCE7
+    component "log\nJSON slog + service field" as Log #DCFCE7
+    component "flags\nLG_FEATURE_* default off" as Flags #DCFCE7
+    component "httpx\nrequest_id + trace_id + JSON log" as HTTPX #DCFCE7
+    component "service\nRun + graceful shutdown" as Service #DCFCE7
+  }
+
+  package "HTTP surface" {
+    component "GET /healthz\nprocess alive" as Health #DCFCE7
+    component "GET /readyz\ndependency checks" as Ready #DCFCE7
+    component "GET /metrics\nPrometheus text" as Metrics #DCFCE7
+  }
+}
+
+package "Planned W1 platform" #FEF3C7 {
+  component "IDs, money, clock, crypto\nand dependency clients" as Primitives #FEF3C7
+  component "PostgreSQL, Redis, NATS\nreadiness adapters" as Dependencies #FEF3C7
+  component "control, ledger, billing,\npayment, reconcile runtimes" as Services #FEF3C7
+  component "OpenAPI, generated servers\nand migrations" as Contracts #FEF3C7
+  component "Compose, Prometheus,\nJaeger and Grafana" as Operations #FEF3C7
+  component "Testkit and full CI gate" as Delivery #FEF3C7
+}
+
+Operator --> ENV : configure
+Operator --> YAML : optional overrides
+Operator --> Main : build / run / SIGTERM
+
+ENV --> Config
+YAML --> Config
+Main --> Config
+Main --> Service
+Service --> Log
+Service --> HTTPX
+Service --> Health
+Service --> Ready
+Service --> Metrics
+
+Config ..> Main : startup fails on missing required values
+Ready ..> Dependencies : planned dependency probes
+Metrics ..> Operations : planned Prometheus scrape
+Main ..> Contracts : planned API + migrate commands
+Delivery ..> Services : planned integration and CI coverage
+Contracts ..> Services : planned generated APIs + migrations
+Operations ..> Services : planned local runtime
+Services ..> Dependencies
+Primitives ..> Services
+
+note right of Config
+  Precedence: defaults < YAML < environment.
+  Unknown YAML fields and missing required values fail startup.
+end note
+
+note right of Flags
+  The evaluator is available and tested in both states.
+  No user-visible route consumes a product flag yet.
+end note
+
+note bottom of Ready
+  No dependency checks are registered yet, so this ticket returns 200.
+  PostgreSQL, Redis and NATS probes move this to 503 on failure later in W1.
+end note
+
+@enduml

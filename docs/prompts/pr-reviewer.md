@@ -38,7 +38,7 @@ Run integration tests and `docker compose config` when the PR touches those area
 7. **Operability**: health/readiness, structured logs, metrics, traces, graceful shutdown, bounded resources.
 8. **Rollback and flags**: can the change be turned off? Is the migration reversible or backward-compatible? Is the flag default off?
 9. **Size and scope**: is the PR within the risk budget? Does it mix a refactor with a feature?
-10. **Impact**: read `artifacts/pr-impact/summary.md` when present; compare the structure and impact Mermaid diagrams to the diff. If the artifact is missing, run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-impact.ps1 -Base main`. When `mermaidiff` is available, run `/mermaidiff <PR>` and treat its brief as a hypothesis, not proof.
+10. **Impact**: read `artifacts/pr-impact/summary.md` and `check.json` when present; compare the Go dependency diagram and predicates to the diff. Open the committed `docs/codegraph/<stage>/graph.html` review bundle. If the artifact is missing, run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr-impact.ps1 -Base main -Stage <stage>`. When `mermaidiff` is available, run `/mermaidiff <PR>` and treat its brief as a hypothesis, not proof.
 
 ## Severity
 
@@ -95,7 +95,7 @@ approve | request changes | needs design/refactor
 - [ ] OpenAPI diff
 - [ ] migration apply
 - [ ] size script
-- [ ] codegraph impact gate
+- [ ] Go impact and CodeGraph bundle gate
 - [ ] compose config
 ```
 

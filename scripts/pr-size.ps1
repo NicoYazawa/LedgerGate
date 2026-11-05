@@ -40,6 +40,8 @@ function Test-Excluded {
     param([string]$Path)
     if ($Path -match '^(vendor|node_modules|bin|dist|\.codegraph|\.mermaidiff|artifacts)/') { return $true }
     if ($Path -match '(^|/)api/generated/') { return $true }
+    if ($Path -match '^docs/codegraph/[^/]+/graph\.html$') { return $true }
+    if ($Path -match '^docs/diagrams/.*\.svg$') { return $true }
     if ($Path -match '\.gen\.go$') { return $true }
     if ($Path -match '^coverage') { return $true }
     if ($Path -in @('go.sum', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock')) { return $true }

@@ -1,0 +1,25 @@
+{
+  "sequence": {
+    "actors": {
+      "CLI": ["cmd/pr-impact/main.go", 27, "added"],
+      "Runner": ["internal/tooling/primpact/run.go", 64, "added"],
+      "Packages": ["internal/tooling/primpact/packages.go", 41, "added"],
+      "Validators": ["internal/tooling/primpact/codegraph.go", 50, "added"]
+    },
+    "messages": [
+      ["cmd/pr-impact/main.go", 27, "added"],
+      ["internal/tooling/primpact/run.go", 100, "added"],
+      ["internal/tooling/primpact/run.go", 145, "added"],
+      ["internal/tooling/primpact/packages.go", 179, "added"],
+      ["internal/tooling/primpact/run.go", 145, "added"],
+      ["internal/tooling/primpact/run.go", 171, "added"],
+      ["internal/tooling/primpact/signatures.go", 13, "added"],
+      ["internal/tooling/primpact/run.go", 171, "added"],
+      ["internal/tooling/primpact/run.go", 188, "added"],
+      ["internal/tooling/primpact/codegraph.go", 81, "added"],
+      ["internal/tooling/primpact/codegraph.go", 98, "added"],
+      ["internal/tooling/primpact/run.go", 188, "added"],
+      ["internal/tooling/primpact/run.go", 206, "added"]
+    ]
+  }
+}

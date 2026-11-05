@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  actor CLI as 命令行入口
+  participant Runner as Gate 运行器
+  participant Packages as Go 包分析器
+  participant Validators as 签名与 CodeGraph 校验器
+
+  CLI->>Runner: 启动影响检查
+  Runner->>Runner: 读取基线与变更文件
+  Runner->>Packages: 分析 Go 包影响
+  Packages->>Packages: 构建反向依赖图
+  Packages-->>Runner: 返回 dependents 与 blast radius
+  Runner->>Validators: 检查导出声明变化
+  Validators->>Validators: 比对删除与新增声明
+  Validators-->>Runner: 返回 breaking exports
+  Runner->>Validators: 校验 CodeGraph bundle
+  Validators->>Validators: 校验 Mermaid 与源码位置
+  Validators->>Validators: 校验生成的 HTML
+  Validators-->>Runner: 返回 bundle 状态
+  Runner->>Runner: 写入报告与 check 结果

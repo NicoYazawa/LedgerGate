@@ -133,6 +133,86 @@ func TestServeDrainsInflightRequestBeforeShutdown(t *testing.T) {
 	}
 }
 
+func TestRunReportsListenError(t *testing.T) {
+	err := Run(context.Background(), config.Config{
+		Service: "gateway", HTTPAddr: "not-an-address", LogLevel: "info",
+	}, Dependencies{}, nil)
+	if err == nil || !strings.Contains(err.Error(), "listen on") {
+		t.Errorf("Run() error = %v, want listen error", err)
+	}
+}
+
+func TestRunReturnsWhenContextIsAlreadyCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := Run(ctx, testConfig(), Dependencies{}, nil)
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+}
+
+func TestServeClosesInflightRequestAtShutdownTimeout(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	routes := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		close(started)
+		<-release
+	})
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := testConfig()
+	cfg.ShutdownTimeout = 20 * time.Millisecond
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		done <- Serve(ctx, cfg, listener, Dependencies{}, routes, discardLogger())
+	}()
+
+	requestDone := make(chan struct{})
+	go func() {
+		response, _ := http.Get("http://" + listener.Addr().String() + "/slow")
+		if response != nil {
+			_ = response.Body.Close()
+		}
+		close(requestDone)
+	}()
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("request did not reach handler")
+	}
+	cancel()
+
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "shutdown HTTP server") {
+			t.Errorf("Serve() error = %v, want shutdown timeout", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Serve() did not return after shutdown timeout")
+	}
+	close(release)
+	select {
+	case <-requestDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("request did not finish")
+	}
+}
+
+func TestNewHandlerFallsBackWhenDependenciesAreNil(t *testing.T) {
+	handler := NewHandler(testConfig(), Dependencies{}, nil, nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/missing", nil))
+
+	if response.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", response.Code)
+	}
+}
+
 func testConfig() config.Config {
 	return config.Config{
 		Env: "test", Service: "gateway", HTTPAddr: "127.0.0.1:0",

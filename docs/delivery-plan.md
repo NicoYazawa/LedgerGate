@@ -37,7 +37,7 @@ Every PR must pass these before merge, in addition to the milestone gate:
 - OpenAPI diff: additive only, no frozen operation removed or renamed;
 - migration apply on a fresh PostgreSQL 18 database, expand–contract only;
 - `scripts/pr-size.ps1` within the risk budget, or `size:large` with justification;
-- codegraph impact gate: cycles, blast radius, exported signatures and manifesto rules; advisory until `CODEGRAPH_ENFORCE=true`;
+- impact gate: Go package blast radius, exported declaration guard and committed CodeGraph bundle validation; advisory until `CODEGRAPH_ENFORCE=true`;
 - independent reviewer verdict with no unresolved blocker/high;
 - rollback plan and, when applicable, a default-off feature flag tested both ways.
 
